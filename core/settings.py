@@ -45,8 +45,8 @@ INSTALLED_APPS = [
     'corsheaders',
     
     # Eigene Apps (kommen später)
-    # 'auth_app',
-    # 'kanban_app',
+    'auth_app',
+    'kanban_app',
 ]
 
 MIDDLEWARE = [
