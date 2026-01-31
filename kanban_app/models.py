@@ -118,3 +118,36 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
+    
+class Comment(models.Model):
+    """
+    Represents a comment on a task.
+    Users can add comments to discuss tasks.
+    """
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name="Task"
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name="Author"
+    )
+    text = models.TextField(
+        verbose_name="Comment Text"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Created At"
+    )
+
+    class Meta:
+        verbose_name = "Comment"
+        verbose_name_plural = "Comments"
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.task.title}"
