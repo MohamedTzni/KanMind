@@ -53,3 +53,32 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user.save()
         
         return user
+
+class LoginSerializer(serializers.Serializer):
+    """
+    Serializer for user login.
+    Validates email and password.
+    """
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        """Validate email and password."""
+        from django.contrib.auth import authenticate
+        
+        email = attrs.get('email')
+        password = attrs.get('password')
+        
+        # Find user by email
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid credentials.")
+        
+        # Check password
+        user = authenticate(username=user.username, password=password)
+        if user is None:
+            raise serializers.ValidationError("Invalid credentials.")
+        
+        attrs['user'] = user
+        return attrs
