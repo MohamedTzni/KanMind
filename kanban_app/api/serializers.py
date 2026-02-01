@@ -45,3 +45,35 @@ class BoardSerializer(serializers.ModelSerializer):
     def get_tasks_high_prio_count(self, obj):
         """Returns the number of high priority tasks."""
         return obj.tasks.filter(priority='high').count()
+    
+class TaskSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Task model.
+    Includes board and assigned users information.
+    """
+    board_id = serializers.IntegerField(source='board.id', read_only=True)
+    created_by_id = serializers.IntegerField(source='created_by.id', read_only=True, allow_null=True)
+    assigned_to_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        source='assigned_to',
+        required=False
+    )
+
+    class Meta:
+        model = Task
+        fields = [
+            'id',
+            'board',
+            'board_id',
+            'title',
+            'description',
+            'status',
+            'priority',
+            'assigned_to_ids',
+            'created_by_id',
+            'created_at',
+            'updated_at',
+            'due_date',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_id']
