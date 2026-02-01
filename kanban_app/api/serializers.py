@@ -77,3 +77,13 @@ class TaskSerializer(serializers.ModelSerializer):
             'due_date',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_id']
+
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Basic serializer for User model.
+    Used for user information display.
+    """
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+        read_only_fields = ['id']
