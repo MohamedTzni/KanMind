@@ -45,7 +45,8 @@ class BoardSerializer(serializers.ModelSerializer):
     def get_tasks_high_prio_count(self, obj):
         """Returns the number of high priority tasks."""
         return obj.tasks.filter(priority='high').count()
-    
+
+
 class TaskSerializer(serializers.ModelSerializer):
     """
     Serializer for Task model.
@@ -77,6 +78,28 @@ class TaskSerializer(serializers.ModelSerializer):
             'due_date',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_id']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Comment model.
+    Includes author information.
+    """
+    author_id = serializers.IntegerField(source='author.id', read_only=True)
+    author_name = serializers.CharField(source='author.username', read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = [
+            'id',
+            'task',
+            'author_id',
+            'author_name',
+            'text',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'author_id', 'author_name']
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
