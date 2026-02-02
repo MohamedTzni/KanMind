@@ -104,3 +104,12 @@ class CommentViewSet(viewsets.ModelViewSet):
         Set the author to the current user when creating a comment.
         """
         serializer.save(author=self.request.user)
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for User model.
+    Provides read-only access to user list (for selecting members).
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
