@@ -80,3 +80,27 @@ class TaskViewSet(viewsets.ModelViewSet):
         tasks = Task.objects.filter(board__in=user_boards, status='reviewing')
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
+    
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Comment model.
+    Provides CRUD operations for comments.
+    """
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Filter comments to show only comments from tasks in user's boards.
+        """
+        user = self.request.user
+        user_boards = Board.objects.filter(owner=user) | Board.objects.filter(members=user)
+        user_tasks = Task.objects.filter(board__in=user_boards)
+        return Comment.objects.filter(task__in=user_tasks)
+
+    def perform_create(self, serializer):
+        """
+        Set the author to the current user when creating a comment.
+        """
+        serializer.save(author=self.request.user)
