@@ -1,0 +1,30 @@
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import login
+
+from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
+
+
+class RegistrationView(APIView):
+    """
+    API endpoint for user registration.
+    POST /api/registration/
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """
+        Register a new user.
+        """
+        serializer = RegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'user_id': user.id,
+                'fullname': f"{user.first_name} {user.last_name}".strip(),
+                'email': user.email,
+                'username': user.username,
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
