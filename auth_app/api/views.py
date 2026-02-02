@@ -2,23 +2,24 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from django.contrib.auth import login
+from rest_framework.authtoken.models import Token
 
 from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 
 class RegistrationView(APIView):
-    """API endpoint for user registration"""
+    """User Registration View"""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Register new user and return token"""
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            login(request, user)
+            token = Token.objects.get(user=user)
             
             return Response({
-                'token': request.session.session_key,
+                'token': token.key,
                 'user_id': user.id,
                 'fullname': f"{user.first_name} {user.last_name}".strip(),
                 'email': user.email,
@@ -27,17 +28,18 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
-    """API endpoint for user login"""
+    """User Login View"""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Authenticate user and return token"""
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
             
             return Response({
-                'token': request.session.session_key,
+                'token': token.key,
                 'user_id': user.id,
                 'fullname': f"{user.first_name} {user.last_name}".strip(),
                 'email': user.email,
