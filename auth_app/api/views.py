@@ -28,3 +28,26 @@ class RegistrationView(APIView):
                 'username': user.username,
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginView(APIView):
+    """
+    API endpoint for user login.
+    POST /api/login/
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """
+        Authenticate user and create session.
+        """
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            login(request, user)
+            return Response({
+                'user_id': user.id,
+                'fullname': f"{user.first_name} {user.last_name}".strip(),
+                'email': user.email,
+                'username': user.username,
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
