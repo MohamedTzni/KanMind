@@ -45,7 +45,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
             user.last_name = name_parts[1]
         user.save()
         
-        # Token erstellen
         Token.objects.create(user=user)
         
         return user
