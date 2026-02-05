@@ -3,48 +3,17 @@ from django.contrib.auth.models import User
 
 
 class Board(models.Model):
-    """
-    Represents a Kanban board that contains tasks.
-    Each board has an owner and can have multiple members.
-    """
-    title = models.CharField(
-        max_length=100,
-        verbose_name="Board Title"
-    )
-    owner = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='owned_boards',
-        verbose_name="Board Owner"
-    )
-    members = models.ManyToManyField(
-        User,
-        related_name='boards',
-        blank=True,
-        verbose_name="Board Members"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Created At"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Updated At"
-    )
-
-    class Meta:
-        verbose_name = "Board"
-        verbose_name_plural = "Boards"
-        ordering = ['-created_at']
+    title = models.CharField(max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_boards')
+    members = models.ManyToManyField(User, related_name='boards', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
-    
+
+
 class Task(models.Model):
-    """
-    Represents a task within a Kanban board.
-    Tasks can be assigned to multiple users and have different statuses and priorities.
-    """
     STATUS_CHOICES = [
         ('todo', 'To Do'),
         ('in_progress', 'In Progress'),
@@ -58,96 +27,26 @@ class Task(models.Model):
         ('high', 'High'),
     ]
 
-    board = models.ForeignKey(
-        Board,
-        on_delete=models.CASCADE,
-        related_name='tasks',
-        verbose_name="Board"
-    )
-    title = models.CharField(
-        max_length=200,
-        verbose_name="Task Title"
-    )
-    description = models.TextField(
-        blank=True,
-        verbose_name="Description"
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='todo',
-        verbose_name="Status"
-    )
-    priority = models.CharField(
-        max_length=20,
-        choices=PRIORITY_CHOICES,
-        default='medium',
-        verbose_name="Priority"
-    )
-    assigned_to = models.ManyToManyField(
-        User,
-        related_name='assigned_tasks',
-        blank=True,
-        verbose_name="Assigned To"
-    )
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='created_tasks',
-        verbose_name="Created By"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Created At"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Updated At"
-    )
-    due_date = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name="Due Date"
-    )
-
-    class Meta:
-        verbose_name = "Task"
-        verbose_name_plural = "Tasks"
-        ordering = ['-created_at']
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    assigned_to = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    due_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.title} ({self.get_status_display()})"
-    
+        return self.title
+
+
 class Comment(models.Model):
-    """
-    Represents a comment on a task.
-    Users can add comments to discuss tasks.
-    """
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name="Task"
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name="Author"
-    )
-    text = models.TextField(
-        verbose_name="Comment Text"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Created At"
-    )
-
-    class Meta:
-        verbose_name = "Comment"
-        verbose_name_plural = "Comments"
-        ordering = ['created_at']
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Comment by {self.author.username} on {self.task.title}"
+        return f"Comment by {self.author.username}"
