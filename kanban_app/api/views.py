@@ -1,82 +1,59 @@
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
 
-from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
-
-class RegistrationView(APIView):
-    """User Registration View"""
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        """Register new user and return token"""
-        serializer = RegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token = Token.objects.get(user=user)
-            
-            return Response({
-                'token': token.key,
-                'user_id': user.id,
-                'fullname': f"{user.first_name} {user.last_name}".strip(),
-                'email': user.email,
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from kanban_app.models import Board, Task, Comment
+from kanban_app.api.serializers import BoardSerializer, TaskSerializer, CommentSerializer, UserSerializer
+from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
 
 
-class LoginView(APIView):
-    """User Login View"""
-    permission_classes = [AllowAny]
+class BoardViewSet(viewsets.ModelViewSet):
+    serializer_class = BoardSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
-    def post(self, request):
-        """Authenticate user and return token"""
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token, created = Token.objects.get_or_create(user=user)
-            
-            return Response({
-                'token': token.key,
-                'user_id': user.id,
-                'fullname': f"{user.first_name} {user.last_name}".strip(),
-                'email': user.email,
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        user = self.request.user
+        owned = Board.objects.filter(owner=user)
+        member = Board.objects.filter(members=user)
+        return owned | member
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
-class LogoutView(APIView):
-    """User Logout View"""
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        user = self.request.user
+        owned_boards = Board.objects.filter(owner=user)
+        member_boards = Board.objects.filter(members=user)
+        all_boards = owned_boards | member_boards
+        return Task.objects.filter(board__in=all_boards)
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        user = self.request.user
+        owned_boards = Board.objects.filter(owner=user)
+        member_boards = Board.objects.filter(members=user)
+        all_boards = owned_boards | member_boards
+        user_tasks = Task.objects.filter(board__in=all_boards)
+        return Comment.objects.filter(task__in=user_tasks)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        """Delete user token to logout"""
-        try:
-            request.user.auth_token.delete()
-            return Response(
-                {'message': 'Successfully logged out.'},
-                status=status.HTTP_200_OK
-            )
-        except Exception:
-            return Response(
-                {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class UserProfileView(APIView):
-    """Get current user profile"""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Return current user data"""
-        user = request.user
-        return Response({
-            'user_id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'fullname': f"{user.first_name} {user.last_name}".strip(),
-            'date_joined': user.date_joined,
-        }, status=status.HTTP_200_OK)
