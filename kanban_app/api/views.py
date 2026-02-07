@@ -1,6 +1,8 @@
+from django.contrib.auth.models import User
+
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
+
 from kanban_app.models import Board, Task, Comment
 from kanban_app.api.serializers import BoardSerializer, TaskSerializer, CommentSerializer, UserSerializer
 from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
