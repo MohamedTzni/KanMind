@@ -1,14 +1,14 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
-
 from kanban_app.models import Board, Task, Comment
 from kanban_app.api.serializers import BoardSerializer, TaskSerializer, CommentSerializer, UserSerializer
+from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
 
 
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
     def get_queryset(self):
         user = self.request.user
@@ -22,7 +22,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         user = self.request.user
@@ -37,7 +37,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         user = self.request.user
