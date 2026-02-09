@@ -1,8 +1,10 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from django.test import TestCase
+
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
+
 from kanban_app.models import Board, Task, Comment
 
 
@@ -197,18 +199,102 @@ class CommentAPITest(TestCase):
         self.assertEqual(Comment.objects.count(), 0)
 
 
+class AssignedToMeAPITest(TestCase):
+    """Test assigned-to-me endpoint"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+        self.board = Board.objects.create(title='Test Board', owner=self.user)
+        self.task = Task.objects.create(
+            board=self.board,
+            title='Assigned Task',
+            status='todo',
+            created_by=self.user
+        )
+        self.task.assigned_to.add(self.user)
+
+        self.other_task = Task.objects.create(
+            board=self.board,
+            title='Other Task',
+            status='todo',
+            created_by=self.user
+        )
+
+    def test_assigned_to_me(self):
+        """Test getting tasks assigned to current user"""
+        response = self.client.get('/api/tasks/assigned-to-me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], 'Assigned Task')
+
+    def test_assigned_to_me_unauthorized(self):
+        """Test that unauthenticated users cannot access"""
+        self.client.credentials()
+        response = self.client.get('/api/tasks/assigned-to-me/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ReviewingTasksAPITest(TestCase):
+    """Test reviewing tasks endpoint"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+        self.board = Board.objects.create(title='Test Board', owner=self.user)
+        self.reviewing_task = Task.objects.create(
+            board=self.board,
+            title='Reviewing Task',
+            status='reviewing',
+            created_by=self.user
+        )
+        self.todo_task = Task.objects.create(
+            board=self.board,
+            title='Todo Task',
+            status='todo',
+            created_by=self.user
+        )
+
+    def test_reviewing_tasks(self):
+        """Test getting tasks with reviewing status"""
+        response = self.client.get('/api/tasks/reviewing/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], 'Reviewing Task')
+
+    def test_reviewing_tasks_unauthorized(self):
+        """Test that unauthenticated users cannot access"""
+        self.client.credentials()
+        response = self.client.get('/api/tasks/reviewing/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 class AuthenticationTest(TestCase):
     """Test authentication without token"""
-    
+
     def setUp(self):
         """Create unauthenticated client"""
         self.client = APIClient()
-    
+
     def test_list_boards_unauthorized(self):
         """Test that unauthenticated users cannot list boards"""
         response = self.client.get('/api/boards/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    
+
     def test_create_board_unauthorized(self):
         """Test that unauthenticated users cannot create boards"""
         data = {'title': 'New Board'}
