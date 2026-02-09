@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIRequestFactory
 from kanban_app.models import Board, Task, Comment
-from kanban_app.api.permissions import IsOwner, IsOwnerOrMember, IsOwnerOrReadOnly
+from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
 
 
 class IsOwnerPermissionTest(TestCase):
@@ -100,35 +100,3 @@ class IsOwnerOrMemberPermissionTest(TestCase):
         self.assertFalse(self.permission.has_object_permission(request, None, self.board))
 
 
-class IsOwnerOrReadOnlyPermissionTest(TestCase):
-    """Test IsOwnerOrReadOnly permission"""
-    
-    def setUp(self):
-        """Create test data"""
-        self.factory = APIRequestFactory()
-        self.permission = IsOwnerOrReadOnly()
-        self.owner = User.objects.create_user(username='owner', password='pass')
-        self.other_user = User.objects.create_user(username='other', password='pass')
-        
-        self.board = Board.objects.create(title='Test Board', owner=self.owner)
-    
-    def test_anyone_can_read(self):
-        """Test that anyone can read"""
-        request = self.factory.get('/')
-        request.user = self.other_user
-        
-        self.assertTrue(self.permission.has_object_permission(request, None, self.board))
-    
-    def test_owner_can_modify(self):
-        """Test that owner can modify"""
-        request = self.factory.put('/')
-        request.user = self.owner
-        
-        self.assertTrue(self.permission.has_object_permission(request, None, self.board))
-    
-    def test_non_owner_cannot_modify(self):
-        """Test that non-owner cannot modify"""
-        request = self.factory.put('/')
-        request.user = self.other_user
-        
-        self.assertFalse(self.permission.has_object_permission(request, None, self.board))

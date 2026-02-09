@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -38,16 +38,30 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @action(detail=False, methods=['get'], url_path='assigned-to-me')
-    def assigned_to_me(self, request):
-        tasks = self.get_queryset().filter(assigned_to=request.user)
-        serializer = self.get_serializer(tasks, many=True)
+
+class AssignedToMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        owned_boards = Board.objects.filter(owner=user)
+        member_boards = Board.objects.filter(members=user)
+        all_boards = owned_boards | member_boards
+        tasks = Task.objects.filter(board__in=all_boards, assigned_to=user)
+        serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='reviewing')
-    def reviewing(self, request):
-        tasks = self.get_queryset().filter(status='reviewing')
-        serializer = self.get_serializer(tasks, many=True)
+
+class ReviewingTasksView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        owned_boards = Board.objects.filter(owner=user)
+        member_boards = Board.objects.filter(members=user)
+        all_boards = owned_boards | member_boards
+        tasks = Task.objects.filter(board__in=all_boards, status='reviewing')
+        serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
 
