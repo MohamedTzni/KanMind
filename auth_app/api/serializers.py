@@ -24,7 +24,8 @@ class RegistrationSerializer(serializers.Serializer):
         email = validated_data['email']
         password = validated_data['password']
 
-        username = fullname.replace(' ', '_').lower()
+        # ✅ FIX: Username basiert auf Email (immer unique)
+        username = email
 
         user = User.objects.create_user(
             username=username,
