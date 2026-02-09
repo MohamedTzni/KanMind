@@ -1,8 +1,10 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import TestCase
+
 from rest_framework.test import APIRequestFactory
-from kanban_app.models import Board, Task, Comment
+
 from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
+from kanban_app.models import Board, Task, Comment
 
 
 class IsOwnerPermissionTest(TestCase):
