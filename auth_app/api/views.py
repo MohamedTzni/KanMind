@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 
+from django.contrib.auth.models import User
 from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 
@@ -80,3 +81,13 @@ class UserProfileView(APIView):
             'fullname': f"{user.first_name} {user.last_name}".strip(),
             'date_joined': user.date_joined,
         }, status=status.HTTP_200_OK)
+
+
+class EmailCheckView(APIView):
+    """Check if an email address is already registered"""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get('email', '')
+        exists = User.objects.filter(email=email).exists()
+        return Response({'exists': exists}, status=status.HTTP_200_OK)

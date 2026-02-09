@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from kanban_app.models import Board, Task, Comment
 from kanban_app.api.serializers import BoardSerializer, TaskSerializer, CommentSerializer, UserSerializer
@@ -16,7 +18,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         user = self.request.user
         owned = Board.objects.filter(owner=user)
         member = Board.objects.filter(members=user)
-        return owned | member
+        return (owned | member).distinct()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -35,6 +37,18 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='assigned-to-me')
+    def assigned_to_me(self, request):
+        tasks = self.get_queryset().filter(assigned_to=request.user)
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='reviewing')
+    def reviewing(self, request):
+        tasks = self.get_queryset().filter(status='reviewing')
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
