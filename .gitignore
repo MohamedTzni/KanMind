@@ -2,31 +2,76 @@
 venv/
 env/
 virtualenv/
+ENV/
 
 # Python Cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Datenbank
 db.sqlite3
+db.sqlite3-journal
 *.db
+*.db-journal
+*.sqlite3
 
 # Umgebungsvariablen
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDE
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
 *.swo
+.project
+.pydevproject
+.settings/
 
-# Django
+# Django spezifisch
 media/
 staticfiles/
+static/collected/
+local_settings.py
 
-# OS
+# Testing & Coverage
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Logs
+*.log
+pip-log.txt
+
+# OS spezifisch
 .DS_Store
 Thumbs.db
