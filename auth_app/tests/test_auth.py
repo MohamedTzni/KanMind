@@ -1,8 +1,9 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from django.test import TestCase
+
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
 
 class RegistrationAPITest(TestCase):
@@ -174,3 +175,33 @@ class ProfileAPITest(TestCase):
         self.client.credentials()  # Remove credentials
         response = self.client.get('/api/profile/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class EmailCheckAPITest(TestCase):
+    """Test email check endpoint"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+    def test_email_exists(self):
+        """Test checking an email that already exists"""
+        response = self.client.get('/api/email-check/?email=test@example.com')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['exists'])
+
+    def test_email_does_not_exist(self):
+        """Test checking an email that does not exist"""
+        response = self.client.get('/api/email-check/?email=unknown@example.com')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['exists'])
+
+    def test_email_check_no_param(self):
+        """Test checking without email parameter"""
+        response = self.client.get('/api/email-check/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['exists'])
