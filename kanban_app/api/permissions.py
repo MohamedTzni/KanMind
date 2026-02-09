@@ -7,12 +7,21 @@ class IsOwner(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        if hasattr(obj, 'owner'):
-            return obj.owner == request.user
-        if hasattr(obj, 'created_by'):
-            return obj.created_by == request.user
-        if hasattr(obj, 'author'):
-            return obj.author == request.user
+        try:
+            if obj.owner == request.user:
+                return True
+        except AttributeError:
+            pass
+        try:
+            if obj.created_by == request.user:
+                return True
+        except AttributeError:
+            pass
+        try:
+            if obj.author == request.user:
+                return True
+        except AttributeError:
+            pass
         return False
 
 
