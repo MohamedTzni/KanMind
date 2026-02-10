@@ -9,9 +9,23 @@ from rest_framework.views import APIView
 from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 
+def get_formatted_fullname(user):
+    """Ensure fullname has at least two parts for the frontend's getInitials function."""
+    first = user.first_name.strip()
+    last = user.last_name.strip()
+
+    if not first and not last:
+        return f"{user.username} {user.username}"
+    if not last:
+        return f"{first} {first}"
+    if not first:
+        return f"{last} {last}"
+    return f"{first} {last}"
+
+
 def get_user_response(token, user):
     """Return user data dict for auth responses."""
-    full_name = f"{user.first_name} {user.last_name}".strip()
+    full_name = get_formatted_fullname(user)
     display_name = full_name or user.username
 
     return {
@@ -19,7 +33,7 @@ def get_user_response(token, user):
         'user_id': user.id,
         'username': user.username,
         'fullname': full_name,
-        'name': display_name,   # <-- DAS fehlt deinem Frontend!
+        'name': display_name,
         'email': user.email,
     }
 
@@ -82,7 +96,7 @@ class UserProfileView(APIView):
             'user_id': user.id,
             'username': user.username,
             'email': user.email,
-            'fullname': f"{user.first_name} {user.last_name}".strip(),
+            'fullname': get_formatted_fullname(user),
             'date_joined': user.date_joined,
         }, status=status.HTTP_200_OK)
 
@@ -101,11 +115,10 @@ class EmailCheckView(APIView):
                 {'detail': 'User not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        fullname = f"{user.first_name} {user.last_name}"
         return Response({
             'id': user.id,
             'email': user.email,
-            'fullname': fullname.strip(),
+            'fullname': get_formatted_fullname(user),
         }, status=status.HTTP_200_OK)
     
 
@@ -116,6 +129,6 @@ class UserMeView(APIView):
         user = request.user
         return Response({
             "id": user.id,
-            "name": f"{user.first_name} {user.last_name}".strip() or user.username,
+            "name": get_formatted_fullname(user),
             "email": user.email,
         })
