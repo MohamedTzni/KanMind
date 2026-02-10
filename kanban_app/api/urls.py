@@ -2,7 +2,10 @@ from django.urls import path, include
 
 from rest_framework.routers import DefaultRouter
 
-from kanban_app.api.views import BoardViewSet, TaskViewSet, CommentViewSet, UserViewSet, AssignedToMeView, ReviewingTasksView
+from kanban_app.api.views import (
+    BoardViewSet, TaskViewSet, CommentViewSet,
+    UserViewSet, AssignedToMeView, ReviewingTasksView,
+)
 
 router = DefaultRouter()
 router.register(r'boards', BoardViewSet, basename='board')

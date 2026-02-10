@@ -2,8 +2,10 @@ from rest_framework import permissions
 
 
 class IsOwner(permissions.BasePermission):
+    """Allow write access only to the owner."""
 
     def get_owner(self, obj):
+        """Return the owner of the object."""
         try:
             return obj.owner
         except AttributeError:
@@ -25,6 +27,7 @@ class IsOwner(permissions.BasePermission):
 
 
 class IsOwnerOrMember(permissions.BasePermission):
+    """Allow access to board owner or members."""
 
     def has_object_permission(self, request, view, obj):
         if obj.owner == request.user:
