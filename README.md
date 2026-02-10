@@ -18,7 +18,8 @@ python manage.py runserver
 
 ## Technologies
 
-- Django 6.0.1
+- Python 3.14
+- Django 5.2
 - Django REST Framework 3.16.1
 - SQLite
 
