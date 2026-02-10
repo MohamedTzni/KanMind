@@ -102,7 +102,11 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for Comment model."""
     author = UserSerializer(read_only=True)
     
+    # Das Frontend schickt 'content', aber unser Modell nutzt 'text'.
+    # Mit source='text' sagen wir Django, dass 'content' in 'text' gespeichert werden soll.
+    content = serializers.CharField(source='text', write_only=True)
+    
     class Meta:
         model = Comment
-        fields = ['id', 'task', 'author', 'text', 'created_at']
-        read_only_fields = ['id', 'author', 'created_at']
+        fields = ['id', 'task', 'author', 'text', 'content', 'created_at']
+        read_only_fields = ['id', 'task', 'author', 'text', 'created_at']
