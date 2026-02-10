@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Board(models.Model):
+    """A kanban board with an owner and members."""
     title = models.CharField(max_length=100)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_boards')
     members = models.ManyToManyField(User, related_name='boards', blank=True)
@@ -14,6 +15,7 @@ class Board(models.Model):
 
 
 class Task(models.Model):
+    """A task that belongs to a board."""
     STATUS_CHOICES = [
         ('todo', 'To Do'),
         ('in_progress', 'In Progress'),
@@ -43,6 +45,7 @@ class Task(models.Model):
 
 
 class Comment(models.Model):
+    """A comment on a task."""
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()

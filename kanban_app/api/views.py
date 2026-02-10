@@ -6,11 +6,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
-from kanban_app.api.serializers import BoardSerializer, TaskSerializer, CommentSerializer, UserSerializer
+from kanban_app.api.serializers import (
+    BoardSerializer, TaskSerializer,
+    CommentSerializer, UserSerializer,
+)
 from kanban_app.models import Board, Task, Comment
 
 
 class BoardViewSet(viewsets.ModelViewSet):
+    """CRUD for boards."""
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
@@ -25,6 +29,7 @@ class BoardViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """CRUD for tasks."""
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
@@ -40,6 +45,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class AssignedToMeView(APIView):
+    """Return tasks assigned to the current user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -53,6 +59,7 @@ class AssignedToMeView(APIView):
 
 
 class ReviewingTasksView(APIView):
+    """Return tasks with status reviewing."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -66,6 +73,7 @@ class ReviewingTasksView(APIView):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """CRUD for comments."""
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
@@ -82,6 +90,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only list of users."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
