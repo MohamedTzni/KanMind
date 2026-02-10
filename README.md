@@ -30,6 +30,11 @@ python manage.py runserver
 - `/api/registration/` - User Registrierung
 - `/api/login/` - User Login
 
+## Frontend
+
+Der zugehörige Frontend-Code ist in einem separaten Repository verfügbar:
+https://github.com/Developer-Akademie-Backendkurs/project.KanMind
+
 ## Autor
 
 Mohamed Touzani - Developer Akademie
