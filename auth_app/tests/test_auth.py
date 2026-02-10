@@ -226,3 +226,41 @@ class EmailCheckAPITest(TestCase):
         self.assertEqual(
             response.status_code, status.HTTP_401_UNAUTHORIZED
         )
+
+
+class UserMeAPITest(TestCase):
+    """Test user-me endpoint"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='meuser', password='password', email='me@example.com')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_user_me_success(self):
+        """Test GET /api/users/me/"""
+        response = self.client.get('/api/users/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'me@example.com')
+
+
+class FormattedFullNameTest(TestCase):
+    """Test get_formatted_fullname edge cases"""
+
+    def test_fullname_only_username(self):
+        user = User(username='onlyuser')
+        from auth_app.api.views import get_formatted_fullname
+        fullname = get_formatted_fullname(user)
+        self.assertEqual(fullname, 'onlyuser onlyuser')
+
+    def test_fullname_only_first(self):
+        user = User(username='firstuser', first_name='John')
+        from auth_app.api.views import get_formatted_fullname
+        fullname = get_formatted_fullname(user)
+        self.assertEqual(fullname, 'John John')
+
+    def test_fullname_only_last(self):
+        user = User(username='lastuser', last_name='Doe')
+        from auth_app.api.views import get_formatted_fullname
+        fullname = get_formatted_fullname(user)
+        self.assertEqual(fullname, 'Doe Doe')

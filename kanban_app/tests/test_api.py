@@ -92,7 +92,7 @@ class TaskAPITest(TestCase):
             board=self.board,
             title='Test Task',
             description='Test Description',
-            status='todo',
+            status='to-do',
             priority='medium',
             created_by=self.user
         )
@@ -109,7 +109,7 @@ class TaskAPITest(TestCase):
             'board': self.board.id,
             'title': 'New Task',
             'description': 'New Description',
-            'status': 'todo',
+            'status': 'to-do',
             'priority': 'high'
         }
         response = self.client.post('/api/tasks/', data)
@@ -127,7 +127,7 @@ class TaskAPITest(TestCase):
         data = {
             'board': self.board.id,
             'title': 'Updated Task',
-            'status': 'in_progress',
+            'status': 'in-progress',
             'priority': 'high'
         }
         response = self.client.put(f'/api/tasks/{self.task.id}/', data)
@@ -180,11 +180,11 @@ class CommentAPITest(TestCase):
         """Test creating a comment"""
         data = {
             'task': self.task.id,
-            'text': 'New Comment'
+            'content': 'New Comment'
         }
         response = self.client.post('/api/comments/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['text'], 'New Comment')
+        self.assertEqual(response.data['content'], 'New Comment')
     
     def test_retrieve_comment(self):
         """Test retrieving a single comment"""
@@ -216,7 +216,7 @@ class AssignedToMeAPITest(TestCase):
         self.task = Task.objects.create(
             board=self.board,
             title='Assigned Task',
-            status='todo',
+            status='to-do',
             created_by=self.user
         )
         self.task.assigned_to.add(self.user)
@@ -259,7 +259,7 @@ class ReviewingTasksAPITest(TestCase):
         self.reviewing_task = Task.objects.create(
             board=self.board,
             title='Reviewing Task',
-            status='reviewing',
+            status='review',
             created_by=self.user
         )
         self.todo_task = Task.objects.create(
@@ -300,3 +300,82 @@ class AuthenticationTest(TestCase):
         data = {'title': 'New Board'}
         response = self.client.post('/api/boards/', data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class NestedCommentAPITest(TestCase):
+    """Test nested comment actions within TaskViewSet"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        self.board = Board.objects.create(title='Test Board', owner=self.user)
+        self.task = Task.objects.create(board=self.board, title='Test Task', created_by=self.user)
+        self.comment = Comment.objects.create(task=self.task, author=self.user, text='Old Comment')
+
+    def test_nested_list_comments(self):
+        """Test GET /api/tasks/<id>/comments/"""
+        url = f'/api/tasks/{self.task.id}/comments/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_nested_create_comment(self):
+        """Test POST /api/tasks/<id>/comments/"""
+        url = f'/api/tasks/{self.task.id}/comments/'
+        data = {'content': 'New Nested Comment'}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['content'], 'New Nested Comment')
+
+    def test_nested_delete_comment(self):
+        """Test DELETE /api/tasks/<id>/comments/<id>/"""
+        url = f'/api/tasks/{self.task.id}/comments/{self.comment.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_nested_delete_comment_not_found(self):
+        """Test DELETE nested comment with non-existent id"""
+        url = f'/api/tasks/{self.task.id}/comments/999/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_nested_delete_comment_unauthorized(self):
+        """Test that other users cannot delete someone else's comment"""
+        other_user = User.objects.create_user(username='other', password='password')
+        other_token = Token.objects.create(user=other_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {other_token.key}')
+        
+        url = f'/api/tasks/{self.task.id}/comments/{self.comment.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class SerializerEdgeCaseTest(TestCase):
+    """Test UserSerializer edge cases for coverage"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_user_serializer_fullname_no_names(self):
+        """Test get_fullname with only username set"""
+        user = User.objects.create_user(username='onlyuser', password='password')
+        from kanban_app.api.serializers import UserSerializer
+        fullname = UserSerializer().get_fullname(user)
+        self.assertEqual(fullname, 'onlyuser onlyuser')
+
+    def test_user_serializer_fullname_only_first(self):
+        """Test get_fullname with only first_name set"""
+        user = User.objects.create_user(username='firstuser', password='password', first_name='John')
+        from kanban_app.api.serializers import UserSerializer
+        fullname = UserSerializer().get_fullname(user)
+        self.assertEqual(fullname, 'John John')
+
+    def test_user_serializer_fullname_only_last(self):
+        """Test get_fullname with only last_name set"""
+        user = User.objects.create_user(username='lastuser', password='password', last_name='Doe')
+        from kanban_app.api.serializers import UserSerializer
+        fullname = UserSerializer().get_fullname(user)
+        self.assertEqual(fullname, 'Doe Doe')

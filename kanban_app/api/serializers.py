@@ -109,7 +109,12 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'task', 'author', 'text', 'content', 'created_at']
-        read_only_fields = ['id', 'task', 'author', 'text', 'created_at']
+        # 'task' muss hier raus, damit man Kommentare auch direkt an /api/comments/ schicken kann.
+        # Wir machen es im Serializer-Feld optional, falls es in der View (Nested View) gesetzt wird.
+        read_only_fields = ['id', 'author', 'text', 'created_at']
+        extra_kwargs = {
+            'task': {'required': False}
+        }
 
     def get_author(self, obj):
         """Das Frontend erwartet hier nur den Namen als Text (String), kein Objekt."""
