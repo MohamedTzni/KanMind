@@ -1,4 +1,4 @@
-# Virtuelle Umgebung
+# Virtual environment
 venv/
 env/
 virtualenv/
@@ -14,7 +14,7 @@ dist/
 .eggs/
 .pytest_cache/
 
-# Datenbank
+# Database
 db.sqlite3
 db.sqlite3-journal
 *.db
@@ -23,7 +23,7 @@ db.sqlite3-journal
 *.sqlite3-wal
 *.sqlite3-shm
 
-# Umgebungsvariablen
+# Environment variables
 .env
 .env.*
 !.env.template

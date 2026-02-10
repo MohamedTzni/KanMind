@@ -8,21 +8,22 @@ class UserSerializer(serializers.ModelSerializer):
     fullname = serializers.SerializerMethodField()
 
     class Meta:
+        """Meta options for UserSerializer."""
         model = User
         fields = ['id', 'username', 'email', 'fullname']
 
     def get_fullname(self, user):
-        """Helper to format user data for response - Beginner friendly version."""
+        """Format user full name for the response."""
         first = user.first_name.strip()
         last = user.last_name.strip()
-        
+
         if not first and not last:
             return f"{user.username} {user.username}"
         if not last:
             return f"{first} {first}"
         if not first:
             return f"{last} {last}"
-        
+
         return f"{first} {last}"
 
 
@@ -31,20 +32,30 @@ class TaskSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
-    
+
     assignee_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), source='assignee', write_only=True, required=False, allow_null=True
+        queryset=User.objects.all(),
+        source='assignee',
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
     reviewer_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), source='reviewer', write_only=True, required=False, allow_null=True
+        queryset=User.objects.all(),
+        source='reviewer',
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
 
     class Meta:
+        """Meta options for TaskSerializer."""
         model = Task
         fields = [
             'id', 'board', 'title', 'description',
             'status', 'priority', 'assigned_to',
-            'assignee', 'reviewer', 'assignee_id', 'reviewer_id',
+            'assignee', 'reviewer',
+            'assignee_id', 'reviewer_id',
             'created_by', 'created_at', 'updated_at',
             'due_date', 'comments_count',
         ]
@@ -63,12 +74,13 @@ class BoardSerializer(serializers.ModelSerializer):
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
     tasks_high_prio_count = serializers.SerializerMethodField()
-    
+
     # Nested fields for the frontend
     tasks = TaskSerializer(many=True, read_only=True)
     members = UserSerializer(many=True, read_only=True)
 
     class Meta:
+        """Meta options for BoardSerializer."""
         model = Board
         fields = [
             'id', 'title', 'owner', 'members', 'tasks',
@@ -90,7 +102,6 @@ class BoardSerializer(serializers.ModelSerializer):
 
     def get_tasks_to_do_count(self, obj):
         """Return the number of tasks with status todo."""
-        # Using the new status string from the model
         return obj.tasks.filter(status='to-do').count()
 
     def get_tasks_high_prio_count(self, obj):
@@ -101,21 +112,24 @@ class BoardSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     """Serializer for Comment model."""
     author = serializers.SerializerMethodField()
-    
-    # Das Frontend schickt und erwartet 'content', aber unser Modell nutzt 'text'.
-    # Ohne 'write_only=True' wird das Feld auch beim Lesen (GET) mitgeschickt.
+
+    # The frontend sends 'content', but the model uses 'text'.
     content = serializers.CharField(source='text')
-    
+
     class Meta:
+        """Meta options for CommentSerializer."""
         model = Comment
-        fields = ['id', 'task', 'author', 'text', 'content', 'created_at']
-        # 'task' muss hier raus, damit man Kommentare auch direkt an /api/comments/ schicken kann.
-        # Wir machen es im Serializer-Feld optional, falls es in der View (Nested View) gesetzt wird.
-        read_only_fields = ['id', 'author', 'text', 'created_at']
+        fields = [
+            'id', 'task', 'author', 'text',
+            'content', 'created_at',
+        ]
+        read_only_fields = [
+            'id', 'author', 'text', 'created_at',
+        ]
         extra_kwargs = {
             'task': {'required': False}
         }
 
     def get_author(self, obj):
-        """Das Frontend erwartet hier nur den Namen als Text (String), kein Objekt."""
+        """Return the author full name as a string."""
         return UserSerializer().get_fullname(obj.author)

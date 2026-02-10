@@ -20,12 +20,14 @@ class BoardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
     def get_queryset(self):
+        """Return boards owned by or shared with the user."""
         user = self.request.user
         owned = Board.objects.filter(owner=user)
         member = Board.objects.filter(members=user)
         return (owned | member).distinct()
 
     def perform_create(self, serializer):
+        """Set the current user as board owner."""
         serializer.save(owner=self.request.user)
 
 
@@ -35,6 +37,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
+        """Return tasks from boards the user has access to."""
         user = self.request.user
         owned_boards = Board.objects.filter(owner=user)
         member_boards = Board.objects.filter(members=user)
@@ -42,39 +45,49 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Task.objects.filter(board__in=all_boards)
 
     def perform_create(self, serializer):
+        """Set the current user as task creator."""
         serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['get', 'post'])
     def comments(self, request, pk=None):
-        """Handle comments for a specific task."""
+        """Route to list or create comments for a task."""
         task = self.get_object()
-        
         if request.method == 'GET':
-            # Get all comments for this task
-            comments = task.comments.all()
-            serializer = CommentSerializer(comments, many=True)
-            return Response(serializer.data)
-            
-        elif request.method == 'POST':
-            # Create a new comment for this task
-            serializer = CommentSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(task=task, author=request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return self.list_comments(task)
+        return self.create_comment(request, task)
+
+    def list_comments(self, task):
+        """Return all comments for a task."""
+        comments = task.comments.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+    def create_comment(self, request, task):
+        """Create a new comment for a task."""
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(task=task, author=request.user)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     def delete_comment(self, request, task_id=None, comment_id=None):
-        """Löscht einen spezifischen Kommentar eines Tasks."""
+        """Delete a specific comment of a task."""
         try:
-            # Wir suchen erst den Task und dann den Kommentar darin
             task = Task.objects.get(pk=task_id)
             comment = task.comments.get(pk=comment_id)
         except (Task.DoesNotExist, Comment.DoesNotExist):
-            return Response({"error": "Nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+            error = {"error": "Not found."}
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        # Sicherheit: Nur der Ersteller (author) darf seinen Kommentar löschen
         if comment.author != request.user:
-            return Response({"error": "Nicht erlaubt!"}, status=status.HTTP_403_FORBIDDEN)
+            error = {"error": "Not allowed."}
+            return Response(error, status=status.HTTP_403_FORBIDDEN)
 
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -85,11 +98,15 @@ class AssignedToMeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """Return tasks where the user is in assigned_to."""
         user = request.user
         owned_boards = Board.objects.filter(owner=user)
         member_boards = Board.objects.filter(members=user)
         all_boards = owned_boards | member_boards
-        tasks = Task.objects.filter(board__in=all_boards, assigned_to=user)
+        tasks = Task.objects.filter(
+            board__in=all_boards,
+            assigned_to=user,
+        )
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -99,11 +116,15 @@ class ReviewingTasksView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """Return review tasks from accessible boards."""
         user = request.user
         owned_boards = Board.objects.filter(owner=user)
         member_boards = Board.objects.filter(members=user)
         all_boards = owned_boards | member_boards
-        tasks = Task.objects.filter(board__in=all_boards, status='review')
+        tasks = Task.objects.filter(
+            board__in=all_boards,
+            status='review',
+        )
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -114,6 +135,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
+        """Return comments from tasks on accessible boards."""
         user = self.request.user
         owned_boards = Board.objects.filter(owner=user)
         member_boards = Board.objects.filter(members=user)
@@ -122,6 +144,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(task__in=user_tasks)
 
     def perform_create(self, serializer):
+        """Set the current user as comment author."""
         serializer.save(author=self.request.user)
 
 

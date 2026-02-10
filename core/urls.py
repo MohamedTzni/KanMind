@@ -19,7 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # auth_app zuerst, damit deren URLs (wie users/me/) nicht vom Router in kanban_app abgefangen werden
+    # auth_app first so its URLs (like users/me/) are not caught by the kanban_app router
     path('api/', include('auth_app.api.urls')),
     path('api/', include('kanban_app.api.urls')),
 ]

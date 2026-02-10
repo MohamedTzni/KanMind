@@ -10,7 +10,7 @@ from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 
 def get_formatted_fullname(user):
-    """Ensure fullname has at least two parts for the frontend's getInitials function."""
+    """Ensure fullname has at least two parts for the frontend."""
     first = user.first_name.strip()
     last = user.last_name.strip()
 
@@ -38,59 +38,71 @@ def get_user_response(token, user):
     }
 
 
-
-
 class RegistrationView(APIView):
-    """User Registration View"""
+    """User Registration View."""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Register a new user and return a token."""
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             token = Token.objects.get(user=user)
-            return Response(get_user_response(token, user), status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                get_user_response(token, user),
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class LoginView(APIView):
-    """User Login View"""
+    """User Login View."""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Authenticate user and return a token."""
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             token, created = Token.objects.get_or_create(user=user)
-            return Response(get_user_response(token, user), status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                get_user_response(token, user),
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class LogoutView(APIView):
-    """User Logout View"""
+    """User Logout View."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """Delete user token to logout"""
+        """Delete user token to logout."""
         try:
             request.user.auth_token.delete()
             return Response(
                 {'message': 'Successfully logged out.'},
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
         except Exception:
             return Response(
                 {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
 class UserProfileView(APIView):
-    """Get current user profile"""
+    """Get current user profile."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Return current user data"""
+        """Return current user data."""
         user = request.user
         return Response({
             'user_id': user.id,
@@ -120,12 +132,14 @@ class EmailCheckView(APIView):
             'email': user.email,
             'fullname': get_formatted_fullname(user),
         }, status=status.HTTP_200_OK)
-    
+
 
 class UserMeView(APIView):
+    """Return minimal user data for the current user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """Return id, name and email of the current user."""
         user = request.user
         return Response({
             "id": user.id,

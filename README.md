@@ -1,6 +1,6 @@
 # KanMind Backend
 
-Django REST API für Kanban Board Anwendung.
+Django REST API for a Kanban board application.
 
 ## Installation
 ```bash
@@ -16,7 +16,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## Technologien
+## Technologies
 
 - Django 6.0.1
 - Django REST Framework 3.16.1
@@ -24,17 +24,59 @@ python manage.py runserver
 
 ## API Endpoints
 
-- `/api/boards/` - Board Management
-- `/api/tasks/` - Task Management
-- `/api/comments/` - Kommentare
-- `/api/registration/` - User Registrierung
-- `/api/login/` - User Login
+### Authentication
+
+- `POST /api/registration/` - User registration
+- `POST /api/login/` - User login
+- `POST /api/logout/` - User logout
+- `GET /api/profile/` - User profile
+- `GET /api/email-check/?email=` - Check if email exists
+- `GET /api/users/me/` - Current user data
+
+### Boards
+
+- `GET /api/boards/` - List boards
+- `POST /api/boards/` - Create board
+- `GET /api/boards/<id>/` - Board detail
+- `PUT /api/boards/<id>/` - Update board
+- `DELETE /api/boards/<id>/` - Delete board
+
+### Tasks
+
+- `GET /api/tasks/` - List tasks
+- `POST /api/tasks/` - Create task
+- `GET /api/tasks/<id>/` - Task detail
+- `PUT /api/tasks/<id>/` - Update task
+- `DELETE /api/tasks/<id>/` - Delete task
+- `GET /api/tasks/assigned-to-me/` - Tasks assigned to current user
+- `GET /api/tasks/reviewing/` - Tasks in review status
+
+### Comments
+
+- `GET /api/comments/` - List comments
+- `POST /api/comments/` - Create comment
+- `GET /api/tasks/<id>/comments/` - List task comments
+- `POST /api/tasks/<id>/comments/` - Create task comment
+- `DELETE /api/tasks/<task_id>/comments/<comment_id>/` - Delete comment
+
+### Users
+
+- `GET /api/users/` - List all users
+
+## Token Usage
+
+This project uses Token Authentication. Include the token in the
+Authorization header:
+
+```text
+Authorization: Token <your-token>
+```
 
 ## Frontend
 
-Der zugehörige Frontend-Code ist in einem separaten Repository verfügbar:
+The frontend code is available in a separate repository:
 https://github.com/Developer-Akademie-Backendkurs/project.KanMind
 
-## Autor
+## Author
 
 Mohamed Touzani - Developer Akademie
