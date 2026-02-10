@@ -8,13 +8,13 @@
   },
   "item": [
     {
-      "name": "Auth1",
+      "name": "Register",
       "request": {
         "method": "POST",
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"fullname\": \"Example Username\",\r\n  \"email\": \"example569@mail.de\",\r\n  \"password\": \"examplePassword\",\r\n  \"repeated_password\": \"examplePassword\"\r\n}",
+          "raw": "{\r\n  \"fullname\": \"John Doe\",\r\n  \"email\": \"john@example.com\",\r\n  \"password\": \"secure123\",\r\n  \"repeated_password\": \"secure123\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -36,13 +36,13 @@
       "response": []
     },
     {
-      "name": "Auth2",
+      "name": "Login",
       "request": {
         "method": "POST",
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"email\": \"example@mail.de\",\r\n  \"password\": \"examplePassword\"\r\n}",
+          "raw": "{\r\n  \"email\": \"john@example.com\",\r\n  \"password\": \"secure123\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -64,17 +64,48 @@
       "response": []
     },
     {
-      "name": "Board1",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
+      "name": "Logout",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token dad7c578b5df07fb1b102260fdaad59247ec22f6",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/logout/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "logout",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Profile",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -86,10 +117,149 @@
         },
         "method": "GET",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": ""
+        "url": {
+          "raw": "{{base_url}}/api/profile/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profile",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Current User",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
         },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/me/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "me",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "email-check",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/email-check/?email=john@example.com",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "email-check",
+            ""
+          ],
+          "query": [
+            {
+              "key": "email",
+              "value": "john@example.com"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List All Users",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Boards",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
         "url": {
           "raw": "{{base_url}}/api/boards/",
           "host": [
@@ -105,14 +275,14 @@
       "response": []
     },
     {
-      "name": "Board2",
+      "name": "Create Board",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -126,7 +296,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"title\": \"Test Board API\",\r\n  \"members\": [1, 3, 6]\r\n\r\n}",
+          "raw": "{\r\n  \"title\": \"My Project\",\r\n  \"members\": [2, 3]\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -148,17 +318,14 @@
       "response": []
     },
     {
-      "name": "Board3",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
+      "name": "Get Single Board",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -170,19 +337,15 @@
         },
         "method": "GET",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": ""
-        },
         "url": {
-          "raw": "{{base_url}}/api/boards/10/",
+          "raw": "{{base_url}}/api/boards/26/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "boards",
-            "10",
+            "26",
             ""
           ]
         }
@@ -190,14 +353,14 @@
       "response": []
     },
     {
-      "name": "Board4",
+      "name": "Update Board",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -211,7 +374,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"title\": \"Changed title\",\r\n  \"members\": [\r\n    1,\r\n    54\r\n  ]\r\n}",
+          "raw": "{\r\n  \"title\": \"Updated Title\",\r\n  \"members\": [2, 3, 4]\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -219,14 +382,14 @@
           }
         },
         "url": {
-          "raw": "{{base_url}}/api/boards/5/",
+          "raw": "{{base_url}}/api/boards/26/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "boards",
-            "5",
+            "26",
             ""
           ]
         }
@@ -234,14 +397,14 @@
       "response": []
     },
     {
-      "name": "Board5",
+      "name": "Delete Board",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -253,18 +416,15 @@
         },
         "method": "DELETE",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"title\": \"Neues Projekt\",\r\n  \"members\": [\r\n    12,\r\n    5,\r\n    54,\r\n    2\r\n  ]\r\n}"
-        },
         "url": {
-          "raw": "{{base_url}}/api/boards/",
+          "raw": "{{base_url}}/api/boards/26/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "boards",
+            "26",
             ""
           ]
         }
@@ -272,14 +432,14 @@
       "response": []
     },
     {
-      "name": "Board6",
+      "name": "List Tasks",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -292,55 +452,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/api/email-check/",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "email-check",
-            ""
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Tasks1",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "auth": {
-          "type": "apikey",
-          "apikey": [
-            {
-              "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
-              "type": "string"
-            },
-            {
-              "key": "key",
-              "value": "Authorization",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"title\": \"Neues Projekt\",\r\n  \"members\": [\r\n    12,\r\n    5,\r\n    54,\r\n    2\r\n  ]\r\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/tasks/assigned-to-me/",
+          "raw": "{{base_url}}/api/tasks/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "tasks",
-            "assigned-to-me",
             ""
           ]
         }
@@ -348,34 +466,14 @@
       "response": []
     },
     {
-      "name": "Tasks2",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/tasks/reviewing/",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "tasks",
-            "reviewing",
-            ""
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Tasks3",
+      "name": "Create Task",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -389,7 +487,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"board\": 12,\r\n  \"title\": \"Code-Review durchführen\",\r\n  \"description\": \"Den neuen PR für das Feature X überprüfen\",\r\n  \"status\": \"reviewing\",\r\n  \"priority\": \"medium\",\r\n  \"assignee_id\": 13,\r\n  \"reviewer_id\": 1,\r\n  \"due_date\": \"2025-02-27\"\r\n}",
+          "raw": "{\r\n  \"board\": 27,\r\n  \"title\": \"Implement feature X\",\r\n  \"description\": \"Build the new login page\",\r\n  \"status\": \"to-do\",\r\n  \"priority\": \"high\",\r\n  \"assignee_id\": 15,\r\n  \"reviewer_id\": 13,\r\n  \"due_date\": \"2026-03-15\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -411,14 +509,48 @@
       "response": []
     },
     {
-      "name": "Tasks4",
+      "name": "Get Single Task",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Task",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -432,7 +564,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"title\": \"Code-Review abschließen\",\r\n  \"description\": \"Den PR fertig prüfen und Feedback geben\",\r\n  \"status\": \"done\",\r\n  \"priority\": \"high\",\r\n  \"assignee_id\": 13,\r\n  \"reviewer_id\": 1,\r\n  \"due_date\": \"2025-02-28\"\r\n}",
+          "raw": "{\r\n  \"status\": \"in-progress\",\r\n  \"priority\": \"high\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -440,35 +572,29 @@
           }
         },
         "url": {
-          "raw": "{{base_url}}/api/tasks/6/?task_id",
+          "raw": "{{base_url}}/api/tasks/21/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "tasks",
-            "6",
+            "21",
             ""
-          ],
-          "query": [
-            {
-              "key": "task_id",
-              "value": null
-            }
           ]
         }
       },
       "response": []
     },
     {
-      "name": "Tasks5",
+      "name": "Delete Task",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -481,14 +607,14 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/api/tasks/1/",
+          "raw": "{{base_url}}/api/tasks/20/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "tasks",
-            "1",
+            "20",
             ""
           ]
         }
@@ -496,40 +622,118 @@
       "response": []
     },
     {
-      "name": "Tasks6",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/tasks/1/?task_id",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "tasks",
-            "1",
-            ""
-          ],
-          "query": [
-            {
-              "key": "task_id",
-              "value": null
-            }
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Tasks7",
+      "name": "Tasks Assigned to Me",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/assigned-to-me/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "assigned-to-me",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tasks in Review",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/reviewing/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "reviewing",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List All Comments",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/comments/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "comments",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Comment",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -543,6 +747,52 @@
         "header": [],
         "body": {
           "mode": "raw",
+          "raw": "{\r\n  \"task\": 24,\r\n  \"content\": \"This looks good!\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/comments/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "comments",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Comments for a Task",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
           "raw": "",
           "options": {
             "raw": {
@@ -551,35 +801,75 @@
           }
         },
         "url": {
-          "raw": "{{base_url}}/api/comments/?task_id",
+          "raw": "{{base_url}}/api/tasks/25/comments/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
+            "tasks",
+            "25",
             "comments",
             ""
-          ],
-          "query": [
-            {
-              "key": "task_id",
-              "value": null,
-              "type": "text"
-            }
           ]
         }
       },
       "response": []
     },
     {
-      "name": "Tasks8",
+      "name": "Create Comment on a Task",
       "request": {
         "auth": {
           "type": "apikey",
           "apikey": [
             {
               "key": "value",
-              "value": "Token 7bd8d111f7fa3fbe233814923cc094a3eb0227ac",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
+              "type": "string"
+            },
+            {
+              "key": "key",
+              "value": "Authorization",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"content\": \"Please check the styling\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/tasks/25/comments/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "25",
+            "comments",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Comment",
+      "request": {
+        "auth": {
+          "type": "apikey",
+          "apikey": [
+            {
+              "key": "value",
+              "value": "Token 1f496c40005188217d7607f65881243b85a1b0bc",
               "type": "string"
             },
             {
@@ -591,37 +881,18 @@
         },
         "method": "DELETE",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
         "url": {
-          "raw": "{{base_url}}/api/tasks/3/?task_id&comment_id",
+          "raw": "{{base_url}}/api/tasks/17/comments/24/",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "tasks",
-            "3",
+            "17",
+            "comments",
+            "24",
             ""
-          ],
-          "query": [
-            {
-              "key": "task_id",
-              "value": null,
-              "type": "text"
-            },
-            {
-              "key": "comment_id",
-              "value": null,
-              "type": "text"
-            }
           ]
         }
       },
