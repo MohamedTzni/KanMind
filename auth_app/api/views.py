@@ -11,12 +11,19 @@ from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 def get_user_response(token, user):
     """Return user data dict for auth responses."""
+    full_name = f"{user.first_name} {user.last_name}".strip()
+    display_name = full_name or user.username
+
     return {
         'token': token.key,
         'user_id': user.id,
-        'fullname': f"{user.first_name} {user.last_name}".strip(),
+        'username': user.username,
+        'fullname': full_name,
+        'name': display_name,   # <-- DAS fehlt deinem Frontend!
         'email': user.email,
     }
+
+
 
 
 class RegistrationView(APIView):
@@ -100,3 +107,15 @@ class EmailCheckView(APIView):
             'email': user.email,
             'fullname': fullname.strip(),
         }, status=status.HTTP_200_OK)
+    
+
+class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "name": f"{user.first_name} {user.last_name}".strip() or user.username,
+            "email": user.email,
+        })

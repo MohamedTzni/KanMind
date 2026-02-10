@@ -31,8 +31,8 @@ class BoardAPITest(TestCase):
         """Test listing boards"""
         response = self.client.get('/api/boards/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-    
+        self.assertEqual(len(response.data), 1)
+
     def test_create_board(self):
         """Test creating a board"""
         data = {'title': 'New Board'}
@@ -101,8 +101,8 @@ class TaskAPITest(TestCase):
         """Test listing tasks"""
         response = self.client.get('/api/tasks/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-    
+        self.assertEqual(len(response.data), 1)
+
     def test_create_task(self):
         """Test creating a task"""
         data = {
@@ -174,8 +174,8 @@ class CommentAPITest(TestCase):
         """Test listing comments"""
         response = self.client.get('/api/comments/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-    
+        self.assertEqual(len(response.data), 1)
+
     def test_create_comment(self):
         """Test creating a comment"""
         data = {
