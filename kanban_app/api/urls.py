@@ -14,6 +14,9 @@ router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
+    # Diese Zeile ist für das Löschen von Kommentaren (Nested URLs)
+    path('tasks/<int:task_id>/comments/<int:comment_id>/', TaskViewSet.as_view({'delete': 'delete_comment'})),
+    
     path('tasks/assigned-to-me/', AssignedToMeView.as_view(), name='assigned-to-me'),
     path('tasks/reviewing/', ReviewingTasksView.as_view(), name='reviewing-tasks'),
     path('', include(router.urls)),

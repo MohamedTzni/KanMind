@@ -63,6 +63,22 @@ class TaskViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete_comment(self, request, task_id=None, comment_id=None):
+        """Löscht einen spezifischen Kommentar eines Tasks."""
+        try:
+            # Wir suchen erst den Task und dann den Kommentar darin
+            task = Task.objects.get(pk=task_id)
+            comment = task.comments.get(pk=comment_id)
+        except (Task.DoesNotExist, Comment.DoesNotExist):
+            return Response({"error": "Nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Sicherheit: Nur der Ersteller (author) darf seinen Kommentar löschen
+        if comment.author != request.user:
+            return Response({"error": "Nicht erlaubt!"}, status=status.HTTP_403_FORBIDDEN)
+
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class AssignedToMeView(APIView):
     """Return tasks assigned to the current user."""
