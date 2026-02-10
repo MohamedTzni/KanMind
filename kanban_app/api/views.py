@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -43,6 +44,25 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    @action(detail=True, methods=['get', 'post'])
+    def comments(self, request, pk=None):
+        """Handle comments for a specific task."""
+        task = self.get_object()
+        
+        if request.method == 'GET':
+            # Get all comments for this task
+            comments = task.comments.all()
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+            
+        elif request.method == 'POST':
+            # Create a new comment for this task
+            serializer = CommentSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(task=task, author=request.user)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class AssignedToMeView(APIView):
     """Return tasks assigned to the current user."""
@@ -59,7 +79,7 @@ class AssignedToMeView(APIView):
 
 
 class ReviewingTasksView(APIView):
-    """Return tasks with status reviewing."""
+    """Return tasks with status review."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -67,7 +87,7 @@ class ReviewingTasksView(APIView):
         owned_boards = Board.objects.filter(owner=user)
         member_boards = Board.objects.filter(members=user)
         all_boards = owned_boards | member_boards
-        tasks = Task.objects.filter(board__in=all_boards, status='reviewing')
+        tasks = Task.objects.filter(board__in=all_boards, status='review')
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
