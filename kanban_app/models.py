@@ -17,9 +17,9 @@ class Board(models.Model):
 class Task(models.Model):
     """A task that belongs to a board."""
     STATUS_CHOICES = [
-        ('todo', 'To Do'),
-        ('in_progress', 'In Progress'),
-        ('reviewing', 'Reviewing'),
+        ('to-do', 'To Do'),
+        ('in-progress', 'In Progress'),
+        ('review', 'Reviewing'),
         ('done', 'Done'),
     ]
 
@@ -32,9 +32,11 @@ class Task(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to-do')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     assigned_to = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='task_assignee', blank=True)
+    reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='task_reviewer', blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

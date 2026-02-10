@@ -45,14 +45,23 @@ class TaskSerializer(serializers.ModelSerializer):
     """Serializer for Task model."""
     comments_count = serializers.SerializerMethodField()
     assignee = serializers.SerializerMethodField()
+    reviewer = serializers.SerializerMethodField()
+    
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='assignee', write_only=True, required=False, allow_null=True
+    )
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='reviewer', write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = Task
         fields = [
             'id', 'board', 'title', 'description',
             'status', 'priority', 'assigned_to',
+            'assignee', 'reviewer', 'assignee_id', 'reviewer_id',
             'created_by', 'created_at', 'updated_at',
-            'due_date', 'comments_count', 'assignee',
+            'due_date', 'comments_count',
         ]
         read_only_fields = [
             'id', 'created_by', 'created_at', 'updated_at',
@@ -62,16 +71,36 @@ class TaskSerializer(serializers.ModelSerializer):
         """Return the number of comments on this task."""
         return obj.comments.count()
 
-    def get_assignee(self, obj):
-        """Return the first assigned user or None."""
-        user = obj.assigned_to.first()
+    def get_person_data(self, user):
+        """Helper to format user data for response."""
         if user is None:
             return None
-        fullname = f"{user.first_name} {user.last_name}"
+        
+        # Use simple naming logic for consistency with frontend expectations
+        first = user.first_name.strip()
+        last = user.last_name.strip()
+        
+        if not first and not last:
+            fullname = f"{user.username} {user.username}"
+        elif not last:
+            fullname = f"{first} {first}"
+        elif not first:
+            fullname = f"{last} {last}"
+        else:
+            fullname = f"{first} {last}"
+            
         return {
             'id': user.id,
-            'fullname': fullname.strip(),
+            'fullname': fullname,
         }
+
+    def get_assignee(self, obj):
+        """Return the assignee data."""
+        return self.get_person_data(obj.assignee)
+
+    def get_reviewer(self, obj):
+        """Return the reviewer data."""
+        return self.get_person_data(obj.reviewer)
 
 
 class CommentSerializer(serializers.ModelSerializer):
