@@ -178,30 +178,51 @@ class ProfileAPITest(TestCase):
 
 
 class EmailCheckAPITest(TestCase):
-    """Test email check endpoint"""
+    """Test email check endpoint."""
 
     def setUp(self):
+        """Create test user and authenticated client."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='testpass123'
+            password='testpass123',
+            first_name='Test',
+            last_name='User',
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Token {self.token.key}'
         )
 
     def test_email_exists(self):
-        """Test checking an email that already exists"""
-        response = self.client.get('/api/email-check/?email=test@example.com')
+        """Test checking an email that exists."""
+        url = '/api/email-check/?email=test@example.com'
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.data['exists'])
+        self.assertEqual(response.data['id'], self.user.id)
+        self.assertEqual(response.data['email'], 'test@example.com')
+        self.assertEqual(response.data['fullname'], 'Test User')
 
     def test_email_does_not_exist(self):
-        """Test checking an email that does not exist"""
-        response = self.client.get('/api/email-check/?email=unknown@example.com')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(response.data['exists'])
+        """Test checking an email that does not exist."""
+        url = '/api/email-check/?email=unknown@example.com'
+        response = self.client.get(url)
+        self.assertEqual(
+            response.status_code, status.HTTP_404_NOT_FOUND
+        )
 
     def test_email_check_no_param(self):
-        """Test checking without email parameter"""
+        """Test checking without email parameter."""
         response = self.client.get('/api/email-check/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(response.data['exists'])
+        self.assertEqual(
+            response.status_code, status.HTTP_404_NOT_FOUND
+        )
+
+    def test_email_check_unauthorized(self):
+        """Test email check without authentication."""
+        self.client.credentials()
+        response = self.client.get('/api/email-check/')
+        self.assertEqual(
+            response.status_code, status.HTTP_401_UNAUTHORIZED
+        )
