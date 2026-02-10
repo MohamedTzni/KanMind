@@ -20,28 +20,22 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("Passwords do not match.")
         return data
 
-    def create(self, validated_data):
-        fullname = validated_data['fullname']
-        email = validated_data['email']
-        password = validated_data['password']
-
-        # ✅ FIX: Username basiert auf Email (immer unique)
-        username = email
-
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
-
+    def parse_name(self, fullname):
         name_parts = fullname.split(' ', 1)
-        user.first_name = name_parts[0]
-        if len(name_parts) > 1:
-            user.last_name = name_parts[1]
-        user.save()
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+        return first_name, last_name
 
+    def create(self, validated_data):
+        first_name, last_name = self.parse_name(validated_data['fullname'])
+        user = User.objects.create_user(
+            username=validated_data['email'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=first_name,
+            last_name=last_name,
+        )
         Token.objects.create(user=user)
-
         return user
 
 
