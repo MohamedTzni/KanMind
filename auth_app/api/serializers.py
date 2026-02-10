@@ -5,6 +5,7 @@ from rest_framework.authtoken.models import Token
 
 
 class RegistrationSerializer(serializers.Serializer):
+    """Serializer for user registration."""
     fullname = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
@@ -40,6 +41,7 @@ class RegistrationSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """Serializer for user login."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 

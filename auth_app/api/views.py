@@ -10,6 +10,7 @@ from auth_app.api.serializers import RegistrationSerializer, LoginSerializer
 
 
 def get_user_response(token, user):
+    """Return user data dict for auth responses."""
     return {
         'token': token.key,
         'user_id': user.id,

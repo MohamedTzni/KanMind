@@ -6,6 +6,7 @@ from kanban_app.models import Board, Task, Comment
 
 
 class BoardSerializer(serializers.ModelSerializer):
+    """Serializer for Board model."""
     class Meta:
         model = Board
         fields = ['id', 'title', 'owner', 'members', 'created_at', 'updated_at']
@@ -13,6 +14,7 @@ class BoardSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    """Serializer for Task model."""
     class Meta:
         model = Task
         fields = [
@@ -32,6 +34,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for Comment model."""
     class Meta:
         model = Comment
         fields = ['id', 'task', 'author', 'text', 'created_at']
@@ -39,6 +42,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Serializer for User model."""
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
