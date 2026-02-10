@@ -3,26 +3,18 @@ from rest_framework import permissions
 
 class IsOwner(permissions.BasePermission):
 
+    def get_owner(self, obj):
+        for field in ['owner', 'created_by', 'author']:
+            try:
+                return getattr(obj, field)
+            except AttributeError:
+                continue
+        return None
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        try:
-            if obj.owner == request.user:
-                return True
-        except AttributeError:
-            pass
-        try:
-            if obj.created_by == request.user:
-                return True
-        except AttributeError:
-            pass
-        try:
-            if obj.author == request.user:
-                return True
-        except AttributeError:
-            pass
-        return False
+        return self.get_owner(obj) == request.user
 
 
 class IsOwnerOrMember(permissions.BasePermission):
