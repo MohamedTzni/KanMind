@@ -81,10 +81,22 @@ class UserProfileView(APIView):
 
 
 class EmailCheckView(APIView):
-    """Check if an email address is already registered"""
-    permission_classes = [AllowAny]
+    """Check if an email address is already registered."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """Return user data if email exists, 404 otherwise."""
         email = request.query_params.get('email', '')
-        exists = User.objects.filter(email=email).exists()
-        return Response({'exists': exists}, status=status.HTTP_200_OK)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'User not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        fullname = f"{user.first_name} {user.last_name}"
+        return Response({
+            'id': user.id,
+            'email': user.email,
+            'fullname': fullname.strip(),
+        }, status=status.HTTP_200_OK)
