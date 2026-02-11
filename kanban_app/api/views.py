@@ -6,9 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
+from kanban_app.api.permissions import IsBoardMember, IsOwner, IsOwnerOrMember
 from kanban_app.api.serializers import (
-    BoardSerializer, TaskSerializer,
+    BoardCreateSerializer, BoardSerializer, TaskSerializer,
     CommentSerializer, UserSerializer,
 )
 from kanban_app.models import Board, Task, Comment
@@ -19,12 +19,20 @@ class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
+    def get_serializer_class(self):
+        """Use BoardCreateSerializer for create action."""
+        if self.action == 'create':
+            return BoardCreateSerializer
+        return BoardSerializer
+
     def get_queryset(self):
-        """Return boards owned by or shared with the user."""
-        user = self.request.user
-        owned = Board.objects.filter(owner=user)
-        member = Board.objects.filter(members=user)
-        return (owned | member).distinct()
+        """Return filtered boards for list, all boards for detail actions."""
+        if self.action == 'list':
+            user = self.request.user
+            owned = Board.objects.filter(owner=user)
+            member = Board.objects.filter(members=user)
+            return (owned | member).distinct()
+        return Board.objects.all()
 
     def perform_create(self, serializer):
         """Set the current user as board owner."""
@@ -34,15 +42,35 @@ class BoardViewSet(viewsets.ModelViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     """CRUD for tasks."""
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsBoardMember]
 
     def get_queryset(self):
-        """Return tasks from boards the user has access to."""
-        user = self.request.user
-        owned_boards = Board.objects.filter(owner=user)
-        member_boards = Board.objects.filter(members=user)
-        all_boards = owned_boards | member_boards
-        return Task.objects.filter(board__in=all_boards)
+        """Return filtered tasks for list, all tasks for detail actions."""
+        if self.action == 'list':
+            user = self.request.user
+            owned_boards = Board.objects.filter(owner=user)
+            member_boards = Board.objects.filter(members=user)
+            all_boards = owned_boards | member_boards
+            return Task.objects.filter(board__in=all_boards)
+        return Task.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        """Check board membership before creating a task."""
+        board_id = request.data.get('board')
+        try:
+            board = Board.objects.get(pk=board_id)
+        except Board.DoesNotExist:
+            return Response(
+                {"board": ["Board not found."]},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        user = request.user
+        if board.owner != user and user not in board.members.all():
+            return Response(
+                {"detail": "You must be a member of the board."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         """Set the current user as task creator."""
