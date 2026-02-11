@@ -57,11 +57,16 @@ class TaskViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Check board membership before creating a task."""
         board_id = request.data.get('board')
+        if not board_id:
+            return Response(
+                {"board": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             board = Board.objects.get(pk=board_id)
         except Board.DoesNotExist:
             return Response(
-                {"board": ["Board not found."]},
+                {"detail": "Board not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         user = request.user
@@ -110,12 +115,23 @@ class TaskViewSet(viewsets.ModelViewSet):
             task = Task.objects.get(pk=task_id)
             comment = task.comments.get(pk=comment_id)
         except (Task.DoesNotExist, Comment.DoesNotExist):
-            error = {"error": "Not found."}
-            return Response(error, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        board = task.board
+        if board.owner != request.user and request.user not in board.members.all():
+            return Response(
+                {"detail": "You must be a member of the board."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if comment.author != request.user:
-            error = {"error": "Not allowed."}
-            return Response(error, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "You can only delete your own comments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -170,6 +186,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         all_boards = owned_boards | member_boards
         user_tasks = Task.objects.filter(board__in=all_boards)
         return Comment.objects.filter(task__in=user_tasks)
+
+    def create(self, request, *args, **kwargs):
+        """Validate that task is provided for standalone comment creation."""
+        if 'task' not in request.data:
+            return Response(
+                {"task": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         """Set the current user as comment author."""
