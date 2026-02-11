@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta options for UserSerializer."""
         model = User
-        fields = ['id', 'username', 'email', 'fullname']
+        fields = ['id', 'email', 'fullname']
 
     def get_fullname(self, user):
         """Format user full name for the response."""
@@ -53,14 +53,45 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = [
             'id', 'board', 'title', 'description',
-            'status', 'priority', 'assigned_to',
+            'status', 'priority',
             'assignee', 'reviewer',
             'assignee_id', 'reviewer_id',
-            'created_by', 'created_at', 'updated_at',
             'due_date', 'comments_count',
         ]
-        read_only_fields = [
-            'id', 'created_by', 'created_at', 'updated_at',
+        read_only_fields = ['id']
+
+    def validate(self, data):
+        """Check that assignee and reviewer are board members."""
+        board = data.get('board') or getattr(self.instance, 'board', None)
+        if not board:
+            return data
+        board_user_ids = set(board.members.values_list('id', flat=True))
+        board_user_ids.add(board.owner_id)
+        for field in ('assignee', 'reviewer'):
+            user = data.get(field)
+            if user and user.id not in board_user_ids:
+                raise serializers.ValidationError(
+                    {f"{field}_id": f"User must be a member of the board."}
+                )
+        return data
+
+    def get_comments_count(self, obj):
+        """Return the number of comments on this task."""
+        return obj.comments.count()
+
+
+class TaskNestedSerializer(serializers.ModelSerializer):
+    """Slim task serializer for nested display in board detail."""
+    comments_count = serializers.SerializerMethodField()
+    assignee = UserSerializer(read_only=True)
+    reviewer = UserSerializer(read_only=True)
+
+    class Meta:
+        """Meta options for TaskNestedSerializer."""
+        model = Task
+        fields = [
+            'id', 'title', 'description', 'status', 'priority',
+            'assignee', 'reviewer', 'due_date', 'comments_count',
         ]
 
     def get_comments_count(self, obj):
@@ -68,29 +99,27 @@ class TaskSerializer(serializers.ModelSerializer):
         return obj.comments.count()
 
 
-class BoardSerializer(serializers.ModelSerializer):
-    """Serializer for Board model."""
+class BoardCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a Board (POST /api/boards/)."""
+    members = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        required=False,
+    )
     member_count = serializers.SerializerMethodField()
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
     tasks_high_prio_count = serializers.SerializerMethodField()
 
-    # Nested fields for the frontend
-    tasks = TaskSerializer(many=True, read_only=True)
-    members = UserSerializer(many=True, read_only=True)
-
     class Meta:
-        """Meta options for BoardSerializer."""
+        """Meta options for BoardCreateSerializer."""
         model = Board
         fields = [
-            'id', 'title', 'owner', 'members', 'tasks',
-            'created_at', 'updated_at',
-            'member_count', 'ticket_count',
+            'id', 'title', 'member_count', 'ticket_count',
             'tasks_to_do_count', 'tasks_high_prio_count',
+            'owner_id', 'members',
         ]
-        read_only_fields = [
-            'id', 'owner', 'created_at', 'updated_at',
-        ]
+        read_only_fields = ['id', 'owner_id']
 
     def get_member_count(self, obj):
         """Return the number of board members."""
@@ -107,6 +136,24 @@ class BoardSerializer(serializers.ModelSerializer):
     def get_tasks_high_prio_count(self, obj):
         """Return the number of high priority tasks."""
         return obj.tasks.filter(priority='high').count()
+
+    def to_representation(self, instance):
+        """Return only the summary fields (without members list)."""
+        data = super().to_representation(instance)
+        data.pop('members', None)
+        return data
+
+
+class BoardSerializer(serializers.ModelSerializer):
+    """Serializer for Board detail view."""
+    tasks = TaskNestedSerializer(many=True, read_only=True)
+    members = UserSerializer(many=True, read_only=True)
+
+    class Meta:
+        """Meta options for BoardSerializer."""
+        model = Board
+        fields = ['id', 'title', 'owner_id', 'members', 'tasks']
+        read_only_fields = ['id', 'owner_id']
 
 
 class CommentSerializer(serializers.ModelSerializer):
