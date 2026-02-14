@@ -49,7 +49,12 @@ class RegistrationView(APIView):
             user = serializer.save()
             token = Token.objects.get(user=user)
             return Response(
-                get_user_response(token, user),
+                {
+                    'token': token.key,
+                    'fullname': get_formatted_fullname(user),
+                    'email': user.email,
+                    'user_id': user.id,
+                },
                 status=status.HTTP_201_CREATED,
             )
         return Response(
@@ -69,7 +74,12 @@ class LoginView(APIView):
             user = serializer.validated_data['user']
             token, created = Token.objects.get_or_create(user=user)
             return Response(
-                get_user_response(token, user),
+                {
+                    'token': token.key,
+                    'fullname': get_formatted_fullname(user),
+                    'email': user.email,
+                    'user_id': user.id,
+                },
                 status=status.HTTP_200_OK,
             )
         return Response(
