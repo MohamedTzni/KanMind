@@ -151,3 +151,6 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# Disable trailing slash requirement for API simplicity
+APPEND_SLASH = False
