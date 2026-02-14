@@ -99,61 +99,87 @@ class TaskNestedSerializer(serializers.ModelSerializer):
         return obj.comments.count()
 
 
-class BoardCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a Board (POST /api/boards/)."""
+
+
+
+class BoardListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Board list view.
+    Provides a summary of the board including various counts.
+    """
     members = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         many=True,
+        write_only=True,
         required=False,
     )
-    member_count = serializers.SerializerMethodField()
-    ticket_count = serializers.SerializerMethodField()
-    tasks_to_do_count = serializers.SerializerMethodField()
-    tasks_high_prio_count = serializers.SerializerMethodField()
 
     class Meta:
-        """Meta options for BoardCreateSerializer."""
         model = Board
-        fields = [
-            'id', 'title', 'member_count', 'ticket_count',
-            'tasks_to_do_count', 'tasks_high_prio_count',
-            'owner_id', 'members',
-        ]
-        read_only_fields = ['id', 'owner_id']
-
-    def get_member_count(self, obj):
-        """Return the number of board members."""
-        return obj.members.count()
-
-    def get_ticket_count(self, obj):
-        """Return the number of tasks on this board."""
-        return obj.tasks.count()
-
-    def get_tasks_to_do_count(self, obj):
-        """Return the number of tasks with status todo."""
-        return obj.tasks.filter(status='to-do').count()
-
-    def get_tasks_high_prio_count(self, obj):
-        """Return the number of high priority tasks."""
-        return obj.tasks.filter(priority='high').count()
+        fields = ['id', 'title', 'owner', 'members']
+        read_only_fields = ['id', 'owner']
 
     def to_representation(self, instance):
-        """Return only the summary fields (without members list)."""
-        data = super().to_representation(instance)
-        data.pop('members', None)
-        return data
+        """
+        Returns the data in the format required for the list overview.
+        Includes membership and task statistics.
+        """
+        return {
+            "id": instance.id,
+            "title": instance.title,
+            "member_count": instance.members.count(),
+            "ticket_count": instance.tasks.count(),
+            "tasks_to_do_count": instance.tasks.filter(status='to-do').count(),
+            "tasks_high_prio_count": instance.tasks.filter(priority='high').count(),
+            "owner_id": instance.owner_id
+        }
 
 
-class BoardSerializer(serializers.ModelSerializer):
-    """Serializer for Board detail view."""
-    tasks = TaskNestedSerializer(many=True, read_only=True)
-    members = UserSerializer(many=True, read_only=True)
+class BoardDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Board detail and update view.
+    Provides full user objects for owners and members.
+    """
+
+    members = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
 
     class Meta:
-        """Meta options for BoardSerializer."""
         model = Board
-        fields = ['id', 'title', 'owner_id', 'members', 'tasks']
-        read_only_fields = ['id', 'owner_id']
+        fields = ['id', 'title', 'owner', 'members']
+        read_only_fields = ['id', 'owner']
+
+    def to_representation(self, instance):
+        """
+        Returns full detail representation.
+        Structures owner and member records as data objects.
+        """
+        user_serializer = UserSerializer()
+
+        owner_data = {
+            "id": instance.owner.id,
+            "email": instance.owner.email,
+            "fullname": user_serializer.get_fullname(instance.owner)
+        }
+
+        members_data = []
+        for member in instance.members.all():
+            members_data.append({
+                "id": member.id,
+                "email": member.email,
+                "fullname": user_serializer.get_fullname(member)
+            })
+
+        return {
+            "id": instance.id,
+            "title": instance.title,
+            "owner_data": owner_data,
+            "members_data": members_data
+        }
 
 
 class CommentSerializer(serializers.ModelSerializer):
