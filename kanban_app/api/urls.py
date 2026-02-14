@@ -3,17 +3,20 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from kanban_app.api.views import (
-    BoardViewSet, TaskViewSet, CommentViewSet,
+    BoardListCreateView, BoardDetailView,
+    TaskViewSet, CommentViewSet,
     UserViewSet, AssignedToMeView, ReviewingTasksView,
 )
 
 router = DefaultRouter()
-router.register(r'boards', BoardViewSet, basename='board')
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
+    path('boards/', BoardListCreateView.as_view(), name='board-list'),
+    path('boards/<int:pk>/', BoardDetailView.as_view(), name='board-detail'),
+
     # Nested URL for deleting comments on a specific task
     path(
         'tasks/<int:task_id>/comments/<int:comment_id>/',

@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,35 +8,46 @@ from rest_framework.views import APIView
 
 from kanban_app.api.permissions import IsBoardMember, IsOwner, IsOwnerOrMember
 from kanban_app.api.serializers import (
-    BoardCreateSerializer, BoardSerializer, TaskSerializer,
-    CommentSerializer, UserSerializer,
+    BoardListSerializer, BoardDetailSerializer,
+    TaskSerializer, CommentSerializer, UserSerializer,
 )
 from kanban_app.models import Board, Task, Comment
 
 
-class BoardViewSet(viewsets.ModelViewSet):
-    """CRUD for boards."""
-    serializer_class = BoardSerializer
+class BoardListCreateView(generics.ListCreateAPIView):
+    """
+    View for listing and creating boards.
+    Supports GET for a filtered list and POST for creation.
+    """
+    serializer_class = BoardListSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
-    def get_serializer_class(self):
-        """Use BoardCreateSerializer for create action."""
-        if self.action == 'create':
-            return BoardCreateSerializer
-        return BoardSerializer
-
     def get_queryset(self):
-        """Return filtered boards for list, all boards for detail actions."""
-        if self.action == 'list':
-            user = self.request.user
-            owned = Board.objects.filter(owner=user)
-            member = Board.objects.filter(members=user)
-            return (owned | member).distinct()
-        return Board.objects.all()
+        """
+        Filters boards where the user is an owner or a member.
+        Only returns accessible boards for the current user.
+        """
+        user = self.request.user
+        owned = Board.objects.filter(owner=user)
+        member = Board.objects.filter(members=user)
+        return (owned | member).distinct()
 
     def perform_create(self, serializer):
-        """Set the current user as board owner."""
+        """
+        Custom save logic for new boards.
+        Automatically assigns the requesting user as the board owner.
+        """
         serializer.save(owner=self.request.user)
+
+
+class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    View for individual board operations.
+    Supports GET (retrieve), PUT/PATCH (update), and DELETE.
+    """
+    queryset = Board.objects.all()
+    serializer_class = BoardDetailSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
 
 class TaskViewSet(viewsets.ModelViewSet):

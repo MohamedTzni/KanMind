@@ -31,13 +31,14 @@ class IsOwnerOrMember(permissions.BasePermission):
     """Allow read access to owner and members, write access only to owner."""
 
     def has_object_permission(self, request, view, obj):
-        """Check if user is board owner or member."""
+        """
+        Check if user is board owner or member.
+        Provides both read and write access to owners and members of the board.
+        """
         is_owner = obj.owner == request.user
-        is_member = request.user in obj.members.all()
+        is_member = obj.members.filter(id=request.user.id).exists()
 
-        if request.method in permissions.SAFE_METHODS:
-            return is_owner or is_member
-        return is_owner
+        return is_owner or is_member
 
 
 class IsBoardMember(permissions.BasePermission):
