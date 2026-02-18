@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 
 from kanban_app.api.permissions import IsOwner, IsOwnerOrMember
-from kanban_app.models import Board, Task, Comment
+from kanban_app.models import Board, Ticket, Comment
 
 
 class IsOwnerPermissionTest(TestCase):
@@ -18,13 +18,13 @@ class IsOwnerPermissionTest(TestCase):
         self.other_user = User.objects.create_user(username='other', password='pass')
         
         self.board = Board.objects.create(title='Test Board', owner=self.user)
-        self.task = Task.objects.create(
+        self.ticket = Ticket.objects.create(
             board=self.board,
-            title='Test Task',
+            title='Test Ticket',
             created_by=self.user
         )
         self.comment = Comment.objects.create(
-            task=self.task,
+            ticket=self.ticket,
             author=self.user,
             text='Test Comment'
         )
@@ -35,21 +35,21 @@ class IsOwnerPermissionTest(TestCase):
         request.user = self.other_user
         
         # Should allow read for any authenticated user
-        self.assertTrue(self.permission.has_object_permission(request, None, self.task))
+        self.assertTrue(self.permission.has_object_permission(request, None, self.ticket))
     
-    def test_owner_can_modify_task(self):
-        """Test that owner can modify task (created_by)"""
+    def test_owner_can_modify_ticket(self):
+        """Test that owner can modify ticket (created_by)"""
         request = self.factory.put('/')
         request.user = self.user
         
-        self.assertTrue(self.permission.has_object_permission(request, None, self.task))
+        self.assertTrue(self.permission.has_object_permission(request, None, self.ticket))
     
-    def test_non_owner_cannot_modify_task(self):
-        """Test that non-owner cannot modify task"""
+    def test_non_owner_cannot_modify_ticket(self):
+        """Test that non-owner cannot modify ticket"""
         request = self.factory.put('/')
         request.user = self.other_user
         
-        self.assertFalse(self.permission.has_object_permission(request, None, self.task))
+        self.assertFalse(self.permission.has_object_permission(request, None, self.ticket))
     
     def test_author_can_modify_comment(self):
         """Test that author can modify comment"""
