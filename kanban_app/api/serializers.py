@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from kanban_app.models import Board, Task, Comment
+from kanban_app.models import Board, Ticket, Comment, Subticket
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -27,11 +27,21 @@ class UserSerializer(serializers.ModelSerializer):
         return f"{first} {last}"
 
 
-class TaskSerializer(serializers.ModelSerializer):
-    """Serializer for Task model."""
+class SubticketSerializer(serializers.ModelSerializer):
+    """Serializer for Subticket model."""
+    class Meta:
+        model = Subticket
+        fields = ['id', 'title', 'done', 'ticket']
+        read_only_fields = ['id']
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    """Serializer for Ticket model."""
     comments_count = serializers.SerializerMethodField()
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
+    assigned_to_data = UserSerializer(source='assigned_to', many=True, read_only=True)
+    subtickets = SubticketSerializer(many=True, read_only=True)
 
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -47,16 +57,22 @@ class TaskSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
-        """Meta options for TaskSerializer."""
-        model = Task
+        """Meta options for TicketSerializer."""
+        model = Ticket
         fields = [
             'id', 'board', 'title', 'description',
             'status', 'priority',
             'assignee', 'reviewer',
             'assignee_id', 'reviewer_id',
-            'due_date', 'comments_count',
+            'assigned_to', 'assigned_to_data',
+            'due_date', 'comments_count', 'subtickets',
         ]
         read_only_fields = ['id']
 
@@ -76,30 +92,29 @@ class TaskSerializer(serializers.ModelSerializer):
         return data
 
     def get_comments_count(self, obj):
-        """Return the number of comments on this task."""
+        """Return the number of comments on this ticket."""
         return obj.comments.count()
 
 
-class TaskNestedSerializer(serializers.ModelSerializer):
-    """Slim task serializer for nested display in board detail."""
+class TicketNestedSerializer(serializers.ModelSerializer):
+    """Slim ticket serializer for nested display in board detail."""
     comments_count = serializers.SerializerMethodField()
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
+    assigned_to = UserSerializer(source='assigned_to', many=True, read_only=True)
 
     class Meta:
-        """Meta options for TaskNestedSerializer."""
-        model = Task
+        """Meta options for TicketNestedSerializer."""
+        model = Ticket
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'assignee', 'reviewer', 'due_date', 'comments_count',
+            'assignee', 'reviewer', 'assigned_to',
+            'due_date', 'comments_count',
         ]
 
     def get_comments_count(self, obj):
-        """Return the number of comments on this task."""
+        """Return the number of comments on this ticket."""
         return obj.comments.count()
-
-
-
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -116,21 +131,21 @@ class BoardListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'owner', 'members']
+        fields = ['id', 'title', 'description', 'owner', 'members']
         read_only_fields = ['id', 'owner']
 
     def to_representation(self, instance):
         """
         Returns the data in the format required for the list overview.
-        Includes membership and task statistics.
+        Includes membership and ticket statistics.
         """
         return {
             "id": instance.id,
             "title": instance.title,
             "member_count": instance.members.count(),
-            "ticket_count": instance.tasks.count(),
-            "tasks_to_do_count": instance.tasks.filter(status='to-do').count(),
-            "tasks_high_prio_count": instance.tasks.filter(priority='high').count(),
+            "ticket_count": instance.tickets.count(),
+            "tasks_to_do_count": instance.tickets.filter(status='todo').count(),
+            "tasks_high_prio_count": instance.tickets.filter(priority='urgent').count(),
             "owner_id": instance.owner_id
         }
 
@@ -150,35 +165,20 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'owner', 'members']
+        fields = ['id', 'title', 'description', 'owner', 'members']
         read_only_fields = ['id', 'owner']
 
     def to_representation(self, instance):
         """
         Returns full detail representation.
-        Structures owner and member records as data objects.
+        Includes owner_id, members as user objects, and nested tickets.
         """
-        user_serializer = UserSerializer()
-
-        owner_data = {
-            "id": instance.owner.id,
-            "email": instance.owner.email,
-            "fullname": user_serializer.get_fullname(instance.owner)
-        }
-
-        members_data = []
-        for member in instance.members.all():
-            members_data.append({
-                "id": member.id,
-                "email": member.email,
-                "fullname": user_serializer.get_fullname(member)
-            })
-
         return {
             "id": instance.id,
             "title": instance.title,
-            "owner_data": owner_data,
-            "members_data": members_data
+            "owner_id": instance.owner_id,
+            "members": UserSerializer(instance.members.all(), many=True).data,
+            "tickets": TicketNestedSerializer(instance.tickets.all(), many=True).data
         }
 
 
@@ -193,14 +193,14 @@ class CommentSerializer(serializers.ModelSerializer):
         """Meta options for CommentSerializer."""
         model = Comment
         fields = [
-            'id', 'task', 'author', 'text',
+            'id', 'ticket', 'author', 'text',
             'content', 'created_at',
         ]
         read_only_fields = [
             'id', 'author', 'text', 'created_at',
         ]
         extra_kwargs = {
-            'task': {'required': False}
+            'ticket': {'required': False}
         }
 
     def get_author(self, obj):
