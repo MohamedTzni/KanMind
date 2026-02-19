@@ -3,6 +3,7 @@
 Django REST API for a Kanban board application.
 
 ## Installation
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
@@ -10,6 +11,22 @@ pip install -r requirements.txt
 ```
 
 ## Setup
+
+**1. Configure environment variables:**
+
+```bash
+cp .env.template .env
+```
+
+Then edit `.env` and set your values:
+
+```env
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+```
+
+**2. Run database migrations and start the server:**
+
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
@@ -76,7 +93,7 @@ Authorization: Token <your-token>
 ## Frontend
 
 The frontend code is available in a separate repository:
-https://github.com/Developer-Akademie-Backendkurs/project.KanMind
+[Developer-Akademie-Backendkurs/project.KanMind](https://github.com/Developer-Akademie-Backendkurs/project.KanMind)
 
 ## Author
 
