@@ -156,6 +156,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             "assignee": assignee_data,
             "reviewer": reviewer_data,
             "due_date": str(instance.due_date) if instance.due_date else None,
+            "comments_count": instance.comments.count(),
         }
 
     def update(self, request, *args, **kwargs):

@@ -101,7 +101,7 @@ class TicketNestedSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
-    assigned_to = UserSerializer(source='assigned_to', many=True, read_only=True)
+    assigned_to = UserSerializer(many=True, read_only=True)
 
     class Meta:
         """Meta options for TicketNestedSerializer."""
@@ -145,7 +145,7 @@ class BoardListSerializer(serializers.ModelSerializer):
             "member_count": instance.members.count(),
             "ticket_count": instance.tickets.count(),
             "tasks_to_do_count": instance.tickets.filter(status='todo').count(),
-            "tasks_high_prio_count": instance.tickets.filter(priority='urgent').count(),
+            "tasks_high_prio_count": instance.tickets.filter(priority='high').count(),
             "owner_id": instance.owner_id
         }
 
