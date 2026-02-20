@@ -142,11 +142,12 @@ class BoardListSerializer(serializers.ModelSerializer):
         return {
             "id": instance.id,
             "title": instance.title,
+            "description": instance.description,
             "member_count": instance.members.count(),
             "ticket_count": instance.tickets.count(),
-            "tasks_to_do_count": instance.tickets.filter(status='todo').count(),
+            "tasks_to_do_count": instance.tickets.filter(status='to-do').count(),
             "tasks_high_prio_count": instance.tickets.filter(priority='high').count(),
-            "owner_id": instance.owner_id
+            "owner_id": instance.owner_id,
         }
 
 
@@ -176,9 +177,10 @@ class BoardDetailSerializer(serializers.ModelSerializer):
         return {
             "id": instance.id,
             "title": instance.title,
+            "description": instance.description,
             "owner_id": instance.owner_id,
             "members": UserSerializer(instance.members.all(), many=True).data,
-            "tickets": TicketNestedSerializer(instance.tickets.all(), many=True).data
+            "tickets": TicketNestedSerializer(instance.tickets.all(), many=True).data,
         }
 
 

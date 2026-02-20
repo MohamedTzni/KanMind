@@ -59,7 +59,7 @@ class TicketModelTest(TestCase):
             board=self.board,
             title='Test Ticket',
             description='Test Description',
-            status='todo',
+            status='to-do',
             priority='medium',
             created_by=self.user
         )
@@ -68,7 +68,7 @@ class TicketModelTest(TestCase):
         """Test ticket is created correctly"""
         self.assertEqual(self.ticket.title, 'Test Ticket')
         self.assertEqual(self.ticket.board, self.board)
-        self.assertEqual(self.ticket.status, 'todo')
+        self.assertEqual(self.ticket.status, 'to-do')
         self.assertEqual(self.ticket.priority, 'medium')
     
     def test_ticket_str(self):
@@ -77,9 +77,9 @@ class TicketModelTest(TestCase):
     
     def test_ticket_status_choices(self):
         """Test ticket status choices"""
-        self.ticket.status = 'in_progress'
+        self.ticket.status = 'in-progress'
         self.ticket.save()
-        self.assertEqual(self.ticket.status, 'in_progress')
+        self.assertEqual(self.ticket.status, 'in-progress')
     
     def test_ticket_assigned_to(self):
         """Test assigning users to ticket"""

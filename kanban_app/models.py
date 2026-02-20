@@ -27,9 +27,9 @@ class Board(models.Model):
 class Ticket(models.Model):
     """A ticket that belongs to a board."""
     STATUS_CHOICES = [
-        ('todo', 'To Do'),
-        ('in_progress', 'In Progress'),
-        ('await_feedback', 'Await Feedback'),
+        ('to-do', 'To Do'),
+        ('in-progress', 'In Progress'),
+        ('review', 'Review'),
         ('done', 'Done'),
     ]
 
@@ -37,7 +37,6 @@ class Ticket(models.Model):
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
-        ('urgent', 'Urgent'),
     ]
 
     board = models.ForeignKey(
@@ -50,7 +49,7 @@ class Ticket(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='todo',
+        default='to-do',
     )
     priority = models.CharField(
         max_length=20,
