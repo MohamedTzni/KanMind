@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
@@ -148,12 +149,26 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """Update a ticket and return only spec-required fields."""
+        if 'board' in request.data:
+            return Response(
+                {"detail": "Changing the board is not allowed."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(self._ticket_response(instance))
+        return Response({
+            "id": instance.id,
+            "title": instance.title,
+            "description": instance.description,
+            "status": instance.status,
+            "priority": instance.priority,
+            "assignee": self._build_user_data(instance.assignee),
+            "reviewer": self._build_user_data(instance.reviewer),
+            "due_date": str(instance.due_date) if instance.due_date else None,
+        })
 
     def perform_create(self, serializer):
         """Set the current user as ticket creator."""
@@ -169,15 +184,31 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def list_comments(self, ticket):
         """Return all comments for a ticket."""
-        serializer = CommentSerializer(ticket.comments.all(), many=True)
-        return Response(serializer.data)
+        data = [
+            {
+                "id": c.id,
+                "created_at": c.created_at,
+                "author": UserSerializer().get_fullname(c.author),
+                "content": c.text,
+            }
+            for c in ticket.comments.all()
+        ]
+        return Response(data)
 
     def create_comment(self, request, ticket):
         """Create a new comment for a ticket."""
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(ticket=ticket, author=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            comment = serializer.save(ticket=ticket, author=request.user)
+            return Response(
+                {
+                    "id": comment.id,
+                    "created_at": comment.created_at,
+                    "author": UserSerializer().get_fullname(comment.author),
+                    "content": comment.text,
+                },
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _get_ticket_and_comment(self, ticket_id, comment_id):
@@ -231,17 +262,40 @@ class SubticketViewSet(viewsets.ModelViewSet):
 
 
 class AssignedToMeView(APIView):
-    """Return tickets assigned to the current user as assignee."""
+    """Return tickets assigned to the current user as assignee or reviewer."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Return tickets where the user is the assignee."""
+        """Return tickets where the user is the assignee or reviewer."""
         user = request.user
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
-        tickets = Ticket.objects.filter(board__in=all_boards, assignee=user)
-        return Response(TicketSerializer(tickets, many=True).data)
+        tickets = Ticket.objects.filter(
+            board__in=all_boards
+        ).filter(Q(assignee=user) | Q(reviewer=user))
+        data = [
+            {
+                "id": t.id,
+                "board": t.board_id,
+                "title": t.title,
+                "description": t.description,
+                "status": t.status,
+                "priority": t.priority,
+                "assignee": self._build_user_data(t.assignee),
+                "reviewer": self._build_user_data(t.reviewer),
+                "due_date": str(t.due_date) if t.due_date else None,
+                "comments_count": t.comments.count(),
+            }
+            for t in tickets
+        ]
+        return Response(data)
+
+    def _build_user_data(self, user):
+        """Build user dict for ticket response."""
+        if not user:
+            return None
+        return {"id": user.id, "email": user.email, "fullname": UserSerializer().get_fullname(user)}
 
 
 class ReviewingTasksView(APIView):
@@ -254,8 +308,29 @@ class ReviewingTasksView(APIView):
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
-        tickets = Ticket.objects.filter(board__in=all_boards, status='review')
-        return Response(TicketSerializer(tickets, many=True).data)
+        tickets = Ticket.objects.filter(board__in=all_boards, reviewer=user)
+        data = [
+            {
+                "id": t.id,
+                "board": t.board_id,
+                "title": t.title,
+                "description": t.description,
+                "status": t.status,
+                "priority": t.priority,
+                "assignee": self._build_user_data(t.assignee),
+                "reviewer": self._build_user_data(t.reviewer),
+                "due_date": str(t.due_date) if t.due_date else None,
+                "comments_count": t.comments.count(),
+            }
+            for t in tickets
+        ]
+        return Response(data)
+
+    def _build_user_data(self, user):
+        """Build user dict for ticket response."""
+        if not user:
+            return None
+        return {"id": user.id, "email": user.email, "fullname": UserSerializer().get_fullname(user)}
 
 
 class CommentViewSet(viewsets.ModelViewSet):
