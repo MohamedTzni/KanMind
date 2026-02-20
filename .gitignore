@@ -58,3 +58,9 @@ pip-log.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# Project specific
+API_TESTING.pdf
+KanMind.postman_colection.json
+pytest.ini
+
