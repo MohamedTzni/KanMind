@@ -10,7 +10,7 @@ from kanban_app.api.permissions import IsBoardMember, IsOwner, IsOwnerOrMember
 from kanban_app.api.serializers import (
     BoardListSerializer, BoardDetailSerializer,
     TicketSerializer, CommentSerializer, UserSerializer,
-    SubticketSerializer,
+    UserListSerializer, SubticketSerializer,
 )
 from kanban_app.models import Board, Ticket, Comment, Subticket
 
@@ -46,32 +46,42 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
         member = Board.objects.filter(members=user)
         return (owned | member).distinct()
 
-    def update(self, request, *args, **kwargs):
-        """Update board and return board response."""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(self._build_board_response(instance))
-
     def _build_owner_data(self, owner):
-        """Build owner data dict."""
+        """Build owner data dict for PATCH response."""
         return {
             "id": owner.id,
             "email": owner.email,
             "fullname": UserSerializer().get_fullname(owner),
         }
 
-    def _build_board_response(self, instance):
-        """Build board response with owner and members."""
+    def _build_patch_response(self, instance):
+        """Build PATCH response with owner_data and members_data."""
         return {
             "id": instance.id,
             "title": instance.title,
-            "description": instance.description,
             "owner_data": self._build_owner_data(instance.owner),
             "members_data": UserSerializer(instance.members.all(), many=True).data,
         }
+
+    def destroy(self, request, *args, **kwargs):
+        """Only the board owner can delete."""
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response(
+                {"detail": "Only the board owner can delete this board."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        """Update board and return PATCH-specific response format."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(self._build_patch_response(instance))
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -279,5 +289,5 @@ class CommentViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only list of users."""
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = UserListSerializer
     permission_classes = [IsAuthenticated]

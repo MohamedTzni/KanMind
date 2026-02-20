@@ -27,6 +27,14 @@ class UserSerializer(serializers.ModelSerializer):
         return f"{first} {last}"
 
 
+class UserListSerializer(UserSerializer):
+    """Serializer for the user list endpoint – includes username."""
+
+    class Meta(UserSerializer.Meta):
+        """Meta options for UserListSerializer."""
+        fields = ['id', 'username', 'email', 'fullname']
+
+
 class SubticketSerializer(serializers.ModelSerializer):
     """Serializer for Subticket model."""
     class Meta:
@@ -101,14 +109,13 @@ class TicketNestedSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
-    assigned_to = UserSerializer(many=True, read_only=True)
 
     class Meta:
         """Meta options for TicketNestedSerializer."""
         model = Ticket
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'assignee', 'reviewer', 'assigned_to',
+            'assignee', 'reviewer',
             'due_date', 'comments_count',
         ]
 
@@ -142,7 +149,6 @@ class BoardListSerializer(serializers.ModelSerializer):
         return {
             "id": instance.id,
             "title": instance.title,
-            "description": instance.description,
             "member_count": instance.members.count(),
             "ticket_count": instance.tickets.count(),
             "tasks_to_do_count": instance.tickets.filter(status='to-do').count(),
@@ -177,10 +183,9 @@ class BoardDetailSerializer(serializers.ModelSerializer):
         return {
             "id": instance.id,
             "title": instance.title,
-            "description": instance.description,
             "owner_id": instance.owner_id,
             "members": UserSerializer(instance.members.all(), many=True).data,
-            "tickets": TicketNestedSerializer(instance.tickets.all(), many=True).data,
+            "tasks": TicketNestedSerializer(instance.tickets.all(), many=True).data,
         }
 
 

@@ -33,7 +33,7 @@ class BoardAPITest(TestCase):
         response = self.client.get('/api/boards/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['description'], 'Test Description')
+        self.assertEqual(response.data[0]['title'], 'Test Board')
 
     def test_create_board(self):
         """Test creating a board"""
@@ -41,7 +41,6 @@ class BoardAPITest(TestCase):
         response = self.client.post('/api/boards/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], 'New Board')
-        self.assertEqual(response.data['description'], 'New Board Description')
         self.assertEqual(response.data['owner_id'], self.user.id)
 
     def test_retrieve_board(self):
@@ -49,7 +48,9 @@ class BoardAPITest(TestCase):
         response = self.client.get(f'/api/boards/{self.board.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Test Board')
-        self.assertEqual(response.data['description'], 'Test Description')
+        self.assertEqual(response.data['owner_id'], self.user.id)
+        self.assertIn('members', response.data)
+        self.assertIn('tasks', response.data)
 
     def test_update_board(self):
         """Test updating a board"""
@@ -57,7 +58,6 @@ class BoardAPITest(TestCase):
         response = self.client.patch(f'/api/boards/{self.board.id}/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Updated Board')
-        self.assertEqual(response.data['description'], 'Updated Description')
 
     def test_delete_board(self):
         """Test deleting a board"""
@@ -73,6 +73,17 @@ class BoardAPITest(TestCase):
 
         response = self.client.get(f'/api/boards/{self.board.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_board_forbidden_for_member(self):
+        """Test that a board member cannot delete the board"""
+        member = User.objects.create_user(username='member', password='pass')
+        member_token = Token.objects.create(user=member)
+        self.board.members.add(member)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {member_token.key}')
+
+        response = self.client.delete(f'/api/boards/{self.board.id}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Board.objects.count(), 1)
 
 
 class TicketAPITest(TestCase):
