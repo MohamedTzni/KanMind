@@ -9,3 +9,7 @@ __pycache__/
 *.pyc
 db.sqlite3
 .coverage
+create_board.py
+
+# Postman
+*.postman_collection.json
