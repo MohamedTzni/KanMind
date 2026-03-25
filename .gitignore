@@ -4,6 +4,9 @@ frontend/
 # PDF files
 *.pdf
 
+# Pytest
+pytest.ini
+
 # Python
 __pycache__/
 *.pyc
