@@ -41,11 +41,8 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
     def get_queryset(self):
-        """Return only boards the user can access."""
-        user = self.request.user
-        owned = Board.objects.filter(owner=user)
-        member = Board.objects.filter(members=user)
-        return (owned | member).distinct()
+        """Return all boards; permission classes handle access control."""
+        return Board.objects.all()
 
     def _build_owner_data(self, owner):
         """Build owner data dict for PATCH response."""
