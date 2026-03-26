@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 
 from rest_framework import viewsets, status, generics
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -41,11 +42,15 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
     def get_queryset(self):
-        """Return only boards the user can access."""
-        user = self.request.user
-        owned = Board.objects.filter(owner=user)
-        member = Board.objects.filter(members=user)
-        return (owned | member).distinct()
+        """Return all boards so get_object can distinguish 404 from 403."""
+        return Board.objects.all()
+
+    def get_object(self):
+        """Return board or raise 404/403 based on existence and membership."""
+        obj = super().get_object()
+        if obj.owner != self.request.user and not obj.members.filter(id=self.request.user.id).exists():
+            raise PermissionDenied()
+        return obj
 
     def _build_owner_data(self, owner):
         """Build owner data dict for PATCH response."""
