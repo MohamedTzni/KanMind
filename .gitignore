@@ -1,66 +1,18 @@
-# Virtual environment
-venv/
-env/
-virtualenv/
-ENV/
+# Frontend
+frontend/
 
-# Python Cache / Build
-__pycache__/
-*.py[cod]
-*.so
-build/
-dist/
-*.egg-info/
-.eggs/
-.pytest_cache/
+# PDF files
+*.pdf
 
-# Database
-db.sqlite3
-db.sqlite3-journal
-*.db
-*.sqlite3
-*.sqlite3-journal
-*.sqlite3-wal
-*.sqlite3-shm
-
-# Environment variables
-.env
-.env.*
-!.env.template
-
-# IDE & Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-.settings/
-.project
-.pydevproject
-
-# Django
-media/
-staticfiles/
-static/collected/
-local_settings.py
-
-# Testing & Coverage
-.coverage
-.coverage.*
-htmlcov/
-coverage.xml
-.cache
-.hypothesis/
-
-# Logs
-*.log
-pip-log.txt
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Project specific
-API_TESTING.pdf
-KanMind.postman_colection.json
+# Pytest
 pytest.ini
 
+# Python
+__pycache__/
+*.pyc
+db.sqlite3
+.coverage
+create_board.py
+
+# Postman
+*.postman_collection.json
