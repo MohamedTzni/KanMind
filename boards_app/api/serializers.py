@@ -1,17 +1,17 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
+from rest_framework import serializers
 
 from auth_app.api.serializers import UserSerializer
 from boards_app.models import Board
 
 
 class BoardListSerializer(serializers.ModelSerializer):
-    """Serializer for the Board list view."""
+    """Serializer for board list and create responses."""
     members = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         many=True,
-        write_only=True,
         required=False,
+        write_only=True,
     )
 
     class Meta:
@@ -32,12 +32,12 @@ class BoardListSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
-    """Serializer for the Board detail and update view."""
+    """Serializer for board detail responses and update input."""
     members = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         many=True,
-        write_only=True,
         required=False,
+        write_only=True,
     )
 
     class Meta:
@@ -47,6 +47,7 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         from tasks_app.api.serializers import TicketNestedSerializer
+
         return {
             "id": instance.id,
             "title": instance.title,
