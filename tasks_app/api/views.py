@@ -2,92 +2,18 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 
 from rest_framework import viewsets, status, generics
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from kanban_app.api.permissions import IsBoardMember, IsOwner, IsOwnerOrMember
-from kanban_app.api.serializers import (
-    BoardListSerializer, BoardDetailSerializer,
-    TicketSerializer, CommentSerializer, UserSerializer,
-    UserListSerializer, SubticketSerializer,
+from auth_app.api.serializers import UserSerializer, UserListSerializer
+from boards_app.models import Board
+from tasks_app.api.permissions import IsBoardMember, IsOwner
+from tasks_app.api.serializers import (
+    TicketSerializer, CommentSerializer, SubticketSerializer,
 )
-from kanban_app.models import Board, Ticket, Comment, Subticket
-
-
-class BoardListCreateView(generics.ListCreateAPIView):
-    """View for listing and creating boards."""
-    serializer_class = BoardListSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrMember]
-
-    def get_queryset(self):
-        """Return boards where the user is an owner or member."""
-        user = self.request.user
-        if user.is_superuser:
-            return Board.objects.all()
-        owned = Board.objects.filter(owner=user)
-        member = Board.objects.filter(members=user)
-        return (owned | member).distinct()
-
-    def perform_create(self, serializer):
-        """Assign the requesting user as the board owner."""
-        serializer.save(owner=self.request.user)
-
-
-class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """View for retrieve, update and delete of a single board."""
-    serializer_class = BoardDetailSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrMember]
-
-    def get_queryset(self):
-        """Return all boards so get_object can distinguish 404 from 403."""
-        return Board.objects.all()
-
-    def get_object(self):
-        """Return board or raise 404/403 based on existence and membership."""
-        obj = super().get_object()
-        if obj.owner != self.request.user and not obj.members.filter(id=self.request.user.id).exists():
-            raise PermissionDenied()
-        return obj
-
-    def _build_owner_data(self, owner):
-        """Build owner data dict for PATCH response."""
-        return {
-            "id": owner.id,
-            "email": owner.email,
-            "fullname": UserSerializer().get_fullname(owner),
-        }
-
-    def _build_patch_response(self, instance):
-        """Build PATCH response with owner_data and members_data."""
-        return {
-            "id": instance.id,
-            "title": instance.title,
-            "owner_data": self._build_owner_data(instance.owner),
-            "members_data": UserSerializer(instance.members.all(), many=True).data,
-        }
-
-    def destroy(self, request, *args, **kwargs):
-        """Only the board owner can delete."""
-        instance = self.get_object()
-        if instance.owner != request.user:
-            return Response(
-                {"detail": "Only the board owner can delete this board."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def update(self, request, *args, **kwargs):
-        """Update board and return PATCH-specific response format."""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(self._build_patch_response(instance))
+from tasks_app.models import Ticket, Comment, Subticket
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -96,7 +22,6 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsBoardMember]
 
     def get_queryset(self):
-        """Return filtered tickets for list, all tickets for detail actions."""
         if self.action == 'list':
             user = self.request.user
             all_boards = (
@@ -106,7 +31,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Ticket.objects.all()
 
     def _check_board_access(self, board_id, user):
-        """Return error Response if board not found or user is not a member."""
         try:
             board = Board.objects.get(pk=board_id)
         except Board.DoesNotExist:
@@ -119,7 +43,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         return None
 
     def create(self, request, *args, **kwargs):
-        """Check board membership before creating a ticket."""
         board_id = request.data.get('board')
         if not board_id:
             return Response({"board": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
@@ -132,13 +55,11 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response(self._ticket_response(serializer.instance), status=status.HTTP_201_CREATED)
 
     def _build_user_data(self, user):
-        """Build user dict for ticket response."""
         if not user:
             return None
         return {"id": user.id, "email": user.email, "fullname": UserSerializer().get_fullname(user)}
 
     def _ticket_response(self, instance):
-        """Build a response with only the fields required by the API spec."""
         return {
             "id": instance.id,
             "board": instance.board_id,
@@ -153,7 +74,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         }
 
     def update(self, request, *args, **kwargs):
-        """Update a ticket and return only spec-required fields."""
         if 'board' in request.data:
             return Response(
                 {"detail": "Changing the board is not allowed."},
@@ -176,19 +96,16 @@ class TicketViewSet(viewsets.ModelViewSet):
         })
 
     def perform_create(self, serializer):
-        """Set the current user as ticket creator."""
         serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['get', 'post'])
     def comments(self, request, pk=None):
-        """Route to list or create comments for a ticket."""
         ticket = self.get_object()
         if request.method == 'GET':
-            return self.list_comments(ticket)
-        return self.create_comment(request, ticket)
+            return self._list_comments(ticket)
+        return self._create_comment(request, ticket)
 
-    def list_comments(self, ticket):
-        """Return all comments for a ticket."""
+    def _list_comments(self, ticket):
         data = [
             {
                 "id": c.id,
@@ -200,8 +117,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         ]
         return Response(data)
 
-    def create_comment(self, request, ticket):
-        """Create a new comment for a ticket."""
+    def _create_comment(self, request, ticket):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             comment = serializer.save(ticket=ticket, author=request.user)
@@ -217,7 +133,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _get_ticket_and_comment(self, ticket_id, comment_id):
-        """Fetch ticket and comment, return error Response on failure."""
         try:
             ticket = Ticket.objects.get(pk=ticket_id)
             return ticket, ticket.comments.get(pk=comment_id)
@@ -225,7 +140,6 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND), None
 
     def _check_comment_delete_permission(self, user, ticket, comment):
-        """Return error Response if user lacks permission to delete, else None."""
         board = ticket.board
         if board.owner != user and user not in board.members.all():
             return Response(
@@ -240,7 +154,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         return None
 
     def delete_comment(self, request, ticket_id=None, comment_id=None):
-        """Delete a specific comment of a ticket."""
         ticket, comment = self._get_ticket_and_comment(ticket_id, comment_id)
         if isinstance(ticket, Response):
             return ticket
@@ -258,7 +171,6 @@ class SubticketViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return subtickets for accessible tickets."""
         user = self.request.user
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
@@ -267,11 +179,10 @@ class SubticketViewSet(viewsets.ModelViewSet):
 
 
 class AssignedToMeView(APIView):
-    """Return tickets assigned to the current user as assignee or reviewer."""
+    """Return tickets assigned to the current user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Return tickets where the user is the assignee or reviewer."""
         user = request.user
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
@@ -279,28 +190,27 @@ class AssignedToMeView(APIView):
         tickets = Ticket.objects.filter(
             board__in=all_boards
         ).filter(Q(assignee=user) | Q(reviewer=user))
-        data = [
-            {
-                "id": t.id,
-                "board": t.board_id,
-                "title": t.title,
-                "description": t.description,
-                "status": t.status,
-                "priority": t.priority,
-                "assignee": self._build_user_data(t.assignee),
-                "reviewer": self._build_user_data(t.reviewer),
-                "due_date": str(t.due_date) if t.due_date else None,
-                "comments_count": t.comments.count(),
-            }
-            for t in tickets
-        ]
+        data = [self._ticket_data(t) for t in tickets]
         return Response(data)
 
     def _build_user_data(self, user):
-        """Build user dict for ticket response."""
         if not user:
             return None
         return {"id": user.id, "email": user.email, "fullname": UserSerializer().get_fullname(user)}
+
+    def _ticket_data(self, t):
+        return {
+            "id": t.id,
+            "board": t.board_id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "priority": t.priority,
+            "assignee": self._build_user_data(t.assignee),
+            "reviewer": self._build_user_data(t.reviewer),
+            "due_date": str(t.due_date) if t.due_date else None,
+            "comments_count": t.comments.count(),
+        }
 
 
 class ReviewingTasksView(APIView):
@@ -308,34 +218,32 @@ class ReviewingTasksView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Return tickets with status review from accessible boards."""
         user = request.user
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
         tickets = Ticket.objects.filter(board__in=all_boards, status='review')
-        data = [
-            {
-                "id": t.id,
-                "board": t.board_id,
-                "title": t.title,
-                "description": t.description,
-                "status": t.status,
-                "priority": t.priority,
-                "assignee": self._build_user_data(t.assignee),
-                "reviewer": self._build_user_data(t.reviewer),
-                "due_date": str(t.due_date) if t.due_date else None,
-                "comments_count": t.comments.count(),
-            }
-            for t in tickets
-        ]
+        data = [self._ticket_data(t) for t in tickets]
         return Response(data)
 
     def _build_user_data(self, user):
-        """Build user dict for ticket response."""
         if not user:
             return None
         return {"id": user.id, "email": user.email, "fullname": UserSerializer().get_fullname(user)}
+
+    def _ticket_data(self, t):
+        return {
+            "id": t.id,
+            "board": t.board_id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "priority": t.priority,
+            "assignee": self._build_user_data(t.assignee),
+            "reviewer": self._build_user_data(t.reviewer),
+            "due_date": str(t.due_date) if t.due_date else None,
+            "comments_count": t.comments.count(),
+        }
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -344,7 +252,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
-        """Return comments from tickets on accessible boards."""
         user = self.request.user
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
@@ -353,7 +260,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(ticket__in=user_tickets)
 
     def create(self, request, *args, **kwargs):
-        """Validate that ticket is provided for standalone comment creation."""
         if 'ticket' not in request.data:
             return Response(
                 {"ticket": ["This field is required."]},
@@ -362,7 +268,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        """Set the current user as comment author."""
         serializer.save(author=self.request.user)
 
 

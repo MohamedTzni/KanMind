@@ -4,6 +4,35 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
 
+class UserSerializer(serializers.ModelSerializer):
+    """Serializer for User model with formatted fullname."""
+    fullname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'fullname']
+
+    def get_fullname(self, user):
+        """Format user full name for the response."""
+        first = user.first_name.strip()
+        last = user.last_name.strip()
+
+        if not first and not last:
+            return f"{user.username} {user.username}"
+        if not last:
+            return f"{first} {first}"
+        if not first:
+            return f"{last} {last}"
+        return f"{first} {last}"
+
+
+class UserListSerializer(UserSerializer):
+    """Serializer for the user list endpoint – includes username."""
+
+    class Meta(UserSerializer.Meta):
+        fields = ['id', 'username', 'email', 'fullname']
+
+
 class RegistrationSerializer(serializers.Serializer):
     """Serializer for user registration."""
     fullname = serializers.CharField(max_length=150)

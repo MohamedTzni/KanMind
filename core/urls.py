@@ -19,7 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # auth_app first so its URLs (like users/me/) are not caught by the kanban_app router
     path('api/', include('auth_app.api.urls')),
-    path('api/', include('kanban_app.api.urls')),
+    path('api/', include('boards_app.api.urls')),
+    path('api/', include('tasks_app.api.urls')),
 ]
