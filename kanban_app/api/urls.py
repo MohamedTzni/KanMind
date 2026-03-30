@@ -16,6 +16,7 @@ router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('boards/', BoardListCreateView.as_view(), name='board-list'),
+    path('boards', BoardListCreateView.as_view()),
     path('boards/<int:pk>/', BoardDetailView.as_view(), name='board-detail'),
     path('boards/<int:pk>', BoardDetailView.as_view()),
 
@@ -25,14 +26,26 @@ urlpatterns = [
         TicketViewSet.as_view({'delete': 'delete_comment'}),
     ),
     path(
+        'tasks/<int:ticket_id>/comments/<int:comment_id>',
+        TicketViewSet.as_view({'delete': 'delete_comment'}),
+    ),
+    path(
         'tasks/assigned-to-me/',
         AssignedToMeView.as_view(),
         name='assigned-to-me',
     ),
     path(
+        'tasks/assigned-to-me',
+        AssignedToMeView.as_view(),
+    ),
+    path(
         'tasks/reviewing/',
         ReviewingTasksView.as_view(),
         name='reviewing-tasks',
+    ),
+    path(
+        'tasks/reviewing',
+        ReviewingTasksView.as_view(),
     ),
     path('', include(router.urls)),
 ]
