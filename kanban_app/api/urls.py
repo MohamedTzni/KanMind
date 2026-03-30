@@ -17,6 +17,7 @@ router.register(r'users', UserViewSet, basename='user')
 urlpatterns = [
     path('boards/', BoardListCreateView.as_view(), name='board-list'),
     path('boards/<int:pk>/', BoardDetailView.as_view(), name='board-detail'),
+    path('boards/<int:pk>', BoardDetailView.as_view()),
 
     # Nested URL for deleting comments on a specific ticket
     path(
