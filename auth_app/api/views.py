@@ -129,7 +129,17 @@ class EmailCheckView(APIView):
 
     def get(self, request):
         """Return user data if email exists, 404 otherwise."""
-        email = request.query_params.get('email', '')
+        email = request.query_params.get('email', '').strip()
+        if not email:
+            return Response(
+                {'detail': 'Email parameter is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            return Response(
+                {'detail': 'Invalid email format.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
