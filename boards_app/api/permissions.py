@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsOwnerOrMember(permissions.BasePermission):
-    """Allow access to board owners and members."""
+    """Allow access only to the board owner or a board member."""
 
     def has_object_permission(self, request, view, obj):
         is_owner = obj.owner == request.user
