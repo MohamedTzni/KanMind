@@ -313,7 +313,7 @@ class ReviewingTasksView(APIView):
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
-        tickets = Ticket.objects.filter(board__in=all_boards, reviewer=user)
+        tickets = Ticket.objects.filter(board__in=all_boards, status='review')
         data = [
             {
                 "id": t.id,

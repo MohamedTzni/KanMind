@@ -72,7 +72,7 @@ class BoardAPITest(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {other_token.key}')
 
         response = self.client.get(f'/api/boards/{self.board.id}/')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_board_forbidden_for_member(self):
         """Test that a board member cannot delete the board"""
