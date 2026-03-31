@@ -28,6 +28,11 @@ postman/
 # Claude
 .claude/
 
+# Checkliste
+KanMind_Test_Checkliste.md
+Kopie von KanMind_Test_Checkliste.md
+KanMind_Test_Checkliste.html
+
 # Screenshots / Doku-Bilder
 endpoint_big_chunk_*.png
 endpoint_chunk_*.png
