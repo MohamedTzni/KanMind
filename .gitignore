@@ -20,8 +20,6 @@ create_board.py
 venv/
 .venv/
 
-# Migrations
-boards_app/migrations/
 
 # Postman
 *.postman_collection.json
