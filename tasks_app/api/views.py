@@ -90,7 +90,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         instance.refresh_from_db()
         return Response({
             "id": instance.id,
-            "board": instance.board_id,
             "title": instance.title,
             "description": instance.description,
             "status": instance.status,
