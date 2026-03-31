@@ -1,6 +1,4 @@
 from django.contrib.auth.models import User
-from django.db.models import Q
-
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -20,6 +18,11 @@ class TicketViewSet(viewsets.ModelViewSet):
     """CRUD for tickets."""
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated, IsBoardMember]
+
+    def get_permissions(self):
+        if self.action == 'destroy':
+            return [IsAuthenticated()]
+        return [permission() for permission in self.permission_classes]
 
     def get_queryset(self):
         if self.action == 'list':
@@ -77,15 +80,17 @@ class TicketViewSet(viewsets.ModelViewSet):
         if 'board' in request.data:
             return Response(
                 {"detail": "Changing the board is not allowed."},
-                status=status.HTTP_403_FORBIDDEN,
+                status=status.HTTP_400_BAD_REQUEST,
             )
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        instance.refresh_from_db()
         return Response({
             "id": instance.id,
+            "board": instance.board_id,
             "title": instance.title,
             "description": instance.description,
             "status": instance.status,
@@ -113,7 +118,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                 "author": UserSerializer().get_fullname(c.author),
                 "content": c.text,
             }
-            for c in ticket.comments.all()
+            for c in ticket.comments.order_by('created_at')
         ]
         return Response(data)
 
@@ -140,12 +145,6 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND), None
 
     def _check_comment_delete_permission(self, user, ticket, comment):
-        board = ticket.board
-        if board.owner != user and user not in board.members.all():
-            return Response(
-                {"detail": "You must be a member of the board."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         if comment.author != user:
             return Response(
                 {"detail": "You can only delete your own comments."},
@@ -161,6 +160,21 @@ class TicketViewSet(viewsets.ModelViewSet):
         if error:
             return error
         comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        board_owner = instance.board.owner
+        is_creator = instance.created_by == request.user
+        is_board_owner = board_owner == request.user
+
+        if not (is_creator or is_board_owner):
+            return Response(
+                {"detail": "Only the task creator or board owner can delete this task."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -188,8 +202,9 @@ class AssignedToMeView(APIView):
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
         tickets = Ticket.objects.filter(
-            board__in=all_boards
-        ).filter(Q(assignee=user) | Q(reviewer=user))
+            board__in=all_boards,
+            assignee=user,
+        )
         data = [self._ticket_data(t) for t in tickets]
         return Response(data)
 
@@ -214,7 +229,7 @@ class AssignedToMeView(APIView):
 
 
 class ReviewingTasksView(APIView):
-    """Return tickets with status 'review' from the user's boards."""
+    """Return tickets where the current user is set as reviewer."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -222,7 +237,7 @@ class ReviewingTasksView(APIView):
         all_boards = (
             Board.objects.filter(owner=user) | Board.objects.filter(members=user)
         )
-        tickets = Ticket.objects.filter(board__in=all_boards, status='review')
+        tickets = Ticket.objects.filter(board__in=all_boards, reviewer=user)
         data = [self._ticket_data(t) for t in tickets]
         return Response(data)
 

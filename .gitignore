@@ -22,6 +22,16 @@ venv/
 
 # Postman
 *.postman_collection.json
+postman/
+
+# Claude
+.claude/
+
+# Screenshots / Doku-Bilder
+endpoint_big_chunk_*.png
+endpoint_chunk_*.png
+endpoint_doc*.png
+ersmohamd*.ps1
 
 # Environment
 .env
