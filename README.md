@@ -1,6 +1,6 @@
 # KanMind Backend
 
-Django REST API for a Kanban board application.
+Django REST API for a Kanban board application. This project was created during my training at Developer Akademie.
 
 ## Installation
 
